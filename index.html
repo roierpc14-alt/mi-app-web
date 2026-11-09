@@ -35,15 +35,29 @@ canvas{display:none}
 button{cursor:pointer}
 #set{position:absolute;inset:0;display:none;align-items:flex-end;background:rgba(0,0,0,.6)}
 #set.open{display:flex}
-.card{width:100%;max-width:520px;margin:0 auto;background:#1c1c1e;border-radius:24px 24px 0 0;padding:22px 20px calc(env(safe-area-inset-bottom,0px) + 22px)}
+.card{width:100%;max-width:520px;max-height:92dvh;overflow-y:auto;margin:0 auto;background:#1c1c1e;border-radius:24px 24px 0 0;padding:22px 20px calc(env(safe-area-inset-bottom,0px) + 22px)}
 h2{margin:0 0 4px;font-size:20px}
 label{display:block;margin:18px 0 8px;font-size:13px;color:#aeaeb2}
-input{width:100%;padding:13px 14px;border:1px solid #3a3a3c;border-radius:12px;background:#000;color:#fff;font:16px ui-monospace,Menlo,monospace;user-select:text;-webkit-user-select:text}
+input,textarea{width:100%;padding:13px 14px;border:1px solid #3a3a3c;border-radius:12px;background:#000;color:#fff;font:16px ui-monospace,Menlo,monospace;user-select:text;-webkit-user-select:text}
 small{display:block;margin-top:6px;color:#8e8e93;font-size:12px}
 .seg,.seg2{display:flex;padding:3px;border-radius:12px;background:#000}
 .seg button,.seg2 button{flex:1;padding:10px 0;border:0;border-radius:9px;background:transparent;color:#aeaeb2;font:600 15px system-ui,sans-serif}
 .seg button.on,.seg2 button.on{background:#3a3a3c;color:var(--ac)}
 .seg2{flex-wrap:wrap;gap:3px}.seg2 button{min-width:96px}
+.nat video,.nat #zb{display:none}
+#idle{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;color:#aeaeb2;font-size:15px;pointer-events:none}
+.nat #idle{display:flex}.res #idle{display:none}
+.ring{width:96px;height:96px;padding:0;background:transparent;pointer-events:auto;border-radius:50%;border:5px solid #fff;position:relative}
+.ring::after{content:"";position:absolute;inset:26px;border-radius:50%;background:var(--ac)}
+input[type=range]{padding:0;border:0;background:transparent;accent-color:var(--ac);height:28px}
+#back{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;width:44px;height:44px;padding:0;border-radius:50%;color:#fff;display:none;place-items:center}
+.res #back{display:grid}
+textarea{font-size:13px;line-height:1.4;height:220px;resize:vertical}
+#rst{margin-top:8px;padding:10px 14px;border:1px solid #3a3a3c;border-radius:10px;background:transparent;color:#aeaeb2;font:600 14px system-ui,sans-serif}
+.ver{display:block;margin-top:14px;text-align:center;color:#636366;font-size:11px}
+#idle .ver{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);margin:0}
+select{width:100%;padding:12px;border-radius:12px;border:1px solid #3a3a3c;background:#000;color:#fff;font-size:16px}
+#tv{margin-top:8px;padding:10px 14px;border:1px solid #3a3a3c;border-radius:10px;background:transparent;color:#aeaeb2;font:600 14px system-ui,sans-serif}
 #ok{width:100%;margin-top:24px;padding:14px;border:0;border-radius:14px;background:var(--ac);color:#000;font:700 16px system-ui,sans-serif}
 </style>
 </head>
@@ -52,7 +66,11 @@ small{display:block;margin-top:6px;color:#8e8e93;font-size:12px}
   <video id="v" autoplay playsinline muted></video>
   <canvas id="c"></canvas>
   <div class="shade"></div>
+  <div id="idle"><button id="shutter" class="ctl ring" aria-label="Abrir cámara"></button><span>Toca el círculo para abrir la cámara</span><span class="ver"></span></div>
   <div id="pill" class="glass"></div>
+  <button id="back" class="ctl glass" aria-label="Volver">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+  </button>
   <button id="gear" class="ctl glass" aria-label="Ajustes">
     <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="7.6" stroke-width="3.2" stroke-dasharray="2.98 2.98"/><circle cx="12" cy="12" r="6"/></svg>
   </button>
@@ -65,28 +83,53 @@ small{display:block;margin-top:6px;color:#8e8e93;font-size:12px}
       <small>Consíguela en aistudio.google.com/apikey. Se guarda solo en este dispositivo.</small>
       <label>Nivel de pensamiento</label>
       <div class="seg" data-k="think"><button data-v="low">Bajo</button><button data-v="mid">Medio</button><button data-v="high">Alto</button></div>
-      <label>Zoom inicial</label>
+      <label>Modelo de IA</label>
+      <div class="seg" data-k="model"><button data-v="auto">Automático</button><button data-v="est">3.6 Flash</button><button data-v="rap">Ligero</button></div>
+      <small>Si el elegido falla, prueba los otros. Al final verás cuál respondió.</small>
+      <label>Motor de voz</label>
+      <div class="seg" data-k="engine"><button data-v="gemini">Voz de Gemini</button><button data-v="phone">Voz del teléfono</button></div>
+      <small>La de Gemini suena como música: sigue con la pantalla apagada y responde a los audífonos.</small>
+      <label for="gv">Voz de Gemini</label>
+      <select id="gv"></select>
+      <button id="tv">Probar voz</button> <small id="tvs"></small>
+      <label for="pv">Voz del teléfono</label>
+      <select id="pv"></select>
+      <label>Velocidad de la voz: <span id="rv"></span></label>
+      <input id="rate" type="range" min="0.5" max="1.3" step="0.05">
+      <small>Hacia la izquierda es más lenta y pausada.</small>
+      <label>Cámara</label>
+      <div class="seg" data-k="mode"><button data-v="native">Cámara del teléfono</button><button data-v="viewer">Visor en la app</button></div>
+      <label>Zoom inicial (solo visor)</label>
       <div class="seg" data-k="zoom"><button data-v="0.5">.5x</button><button data-v="1">1x</button><button data-v="2">2x</button></div>
       <label>Cámara gran angular (.5x)</label>
       <div class="seg2" id="wide"></div>
       <small id="wh"></small>
+      <label for="sys">Instrucciones para la IA (se guardan al escribir)</label>
+      <textarea id="sys" spellcheck="false"></textarea>
+      <button id="rst">Restaurar las originales</button>
+      <small>Si una versión nueva trae instrucciones mejoradas, pulsa Restaurar para tomarlas.</small>
       <button id="ok">Listo</button>
+      <span class="ver"></span>
     </div>
   </div>
 </div>
+<input id="nat" type="file" accept="image/*" capture="environment" hidden>
+<audio id="gp" playsinline></audio>
 <audio id="sil" loop playsinline></audio>
 <script>
 const $=s=>document.querySelector(s);
 const st=$('#stage'),vid=$('#v'),cv=$('#c'),pill=$('#pill'),zb=$('#zb'),sheet=$('#set'),keyI=$('#key'),sil=$('#sil');
 const LVL={low:'LOW',mid:'MEDIUM',high:'HIGH'};
-const MODEL='gemini-flash-latest';
+const VER='v7';
+const MODELS=['gemini-flash-latest','gemini-3.6-flash','gemini-3.5-flash-lite'];
+const ORDER={auto:[0,1,2],est:[1,0,2],rap:[2,1,0]};
 const SYS=`Eres un profesor particular de programación, algoritmos, lógica y matemáticas que habla con el estudiante por audio, mientras este camina con audífonos. Recibes una foto de código, pseudocódigo, un diagrama de flujo, un ejercicio o apuntes.
 
 Reglas de formato, porque tu respuesta se lee en voz alta:
 - Solo texto plano en español: sin markdown, listas, viñetas, asteriscos, emojis ni bloques de código.
 - Escribe los números con palabras y las variables como suenan: equis, ye, zeta, ene, eme.
 - Nunca escribas símbolos matemáticos ni de programación (el signo de suma, el igual, paréntesis, llaves, punto y coma): escribe su nombre con palabras.
-- Frases cortas, una sola instrucción por frase, para que la voz haga pausas.
+- Frases cortas, una sola instrucción por frase, para que la voz haga pausas. En los dictados, escribe cada instrucción en su propia línea de texto: entre líneas la voz hará una pausa larga para que el estudiante escriba o dibuje.
 - Empieza directo, sin saludos.
 
 Primero decide qué pide la foto.
@@ -99,9 +142,9 @@ Dictado de matemáticas. Dicta cada expresión en el orden en que se escribe y m
 
 Dictado de diagramas de flujo. Dicta las figuras de arriba hacia abajo, siempre con los mismos nombres: óvalo para inicio y fin, paralelogramo para entrada y salida de datos, rectángulo para procesos, rombo para decisiones y círculo pequeño para conectores. Ejemplo: Dibuja un óvalo y escribe dentro: Inicio. Debajo, dibuja una flecha hacia abajo. Dibuja un paralelogramo y escribe dentro: leer ene. En cada rombo di qué se escribe dentro, de qué lado sale el sí, de qué lado sale el no y qué se escribe sobre cada flecha. Dicta cada camino hasta que se una con otro o regrese a una figura anterior, nombrando esa figura. Al terminar di: fin del diagrama.
 
-Dictado de código. Dicta el código línea por línea, empezando cada una con su número: Línea uno. Las palabras clave y los nombres cortos, de hasta cuatro letras, como int, cin, for, i o n, se deletrean diciendo el nombre de cada letra, por ejemplo: i ene te. Los nombres largos se dicen enteros después de avisar, por ejemplo: escribe la palabra contador, todo junto y en minúsculas. Los símbolos se dicen por su nombre: numeral, abre paréntesis, cierra paréntesis, abre llave, cierra llave, punto y coma, signo igual, doble signo igual, signo menor que, más más, comillas dobles, guion bajo. Indica los espacios (deja un espacio), las sangrías (deja cuatro espacios) y los saltos de línea (presiona enter para pasar a la siguiente línea). Si algo va en mayúscula, dilo. Al terminar di: fin del código.`;
+Dictado de código. El estudiante escribe el código a mano, en papel, así que habla para alguien que tiene un lápiz en la mano: nunca menciones teclado, enter ni tabulador. Dicta línea por línea, empezando cada una con su número: Línea uno. Cada instrucción va en su propia línea de texto, con un solo elemento por línea. Todo lo que sea código (palabras clave, nombres de variables y funciones, símbolos, operadores y números) escríbelo entre dobles corchetes, exactamente como va en el código, sin decir su nombre ni deletrearlo: la aplicación lo deletreará letra por letra. Por ejemplo: Escribe: [[std]]. Luego: Escribe: [[::]]. Luego: Escribe: [[cout]]. No uses dobles corchetes para nada más. Entre un elemento y otro di, en su propia línea: deja un espacio. Al terminar una línea de código di: pasa a la siguiente línea del papel. Para la sangría di: deja cuatro espacios de sangría desde el margen. Al terminar di: fin del código.`;
 
-let S={key:'',think:'mid',zoom:1};
+let S={key:'',think:'mid',zoom:1,mode:'native',rate:.9,model:'auto',sys:'',engine:'gemini',voice:'Kore',pvoice:''};
 try{Object.assign(S,JSON.parse(localStorage.getItem('zf')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('zf',JSON.stringify(S))}catch(e){}};
 const say=(t,busy)=>{pill.textContent=t;pill.classList.toggle('busy',!!busy);pill.classList.toggle('on',!!t)};
@@ -173,25 +216,67 @@ async function snap(){
   return cv.toDataURL('image/jpeg',.85).split(',')[1];
 }
 
-/* ---------- Gemini ---------- */
-async function ask(b64){
-  const ac=new AbortController(),to=setTimeout(()=>ac.abort(),120000);
+/* ---------- Gemini (respuesta por partes) ---------- */
+async function callStream(m,b64,onText){
+  const ac=new AbortController(),T=S.think==='high'?70000:40000;
+  let to,got=0,mv=m;
+  const arm=()=>{clearTimeout(to);to=setTimeout(()=>ac.abort(),T)};
   try{
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+MODEL+':generateContent',{
-      method:'POST',signal:ac.signal,
-      headers:{'Content-Type':'application/json','x-goog-api-key':S.key},
-      body:JSON.stringify({
-        systemInstruction:{parts:[{text:SYS}]},
-        contents:[{role:'user',parts:[{inline_data:{mime_type:'image/jpeg',data:b64}},{text:'Explícame esto por audio.'}]}],
-        generationConfig:{thinkingConfig:{thinkingLevel:LVL[S.think]}}
-      })
-    });
-    const j=await r.json();
-    if(!r.ok)throw new Error(j.error&&j.error.message||('HTTP '+r.status));
-    const t=((j.candidates&&j.candidates[0]&&j.candidates[0].content.parts)||[]).filter(p=>!p.thought).map(p=>p.text||'').join(' ').trim();
-    if(!t)throw new Error('La respuesta llegó vacía');
-    return t;
+    arm();
+    let r;
+    try{
+      r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':streamGenerateContent?alt=sse',{
+        method:'POST',signal:ac.signal,
+        headers:{'Content-Type':'application/json','x-goog-api-key':S.key},
+        body:JSON.stringify({
+          systemInstruction:{parts:[{text:(S.sys&&S.sys.trim())?S.sys:SYS}]},
+          contents:[{role:'user',parts:[{inline_data:{mime_type:'image/jpeg',data:b64}},{text:'Explícame esto por audio.'}]}],
+          generationConfig:{thinkingConfig:{thinkingLevel:LVL[S.think]}}
+        })
+      });
+    }catch(e){e.message=ac.signal.aborted?'sin respuesta a tiempo':'sin conexión';e.retry=true;throw e}
+    if(!r.ok){
+      const j=await r.json().catch(()=>({})),er=(Array.isArray(j)?j[0]:j)||{};
+      const e=new Error((er.error&&er.error.message)||('HTTP '+r.status));
+      e.retry=[404,429,500,503,504].includes(r.status);throw e;
+    }
+    const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
+    for(;;){
+      arm();
+      const {done,value}=await rd.read();
+      if(done)break;
+      buf+=dec.decode(value,{stream:true}).replace(/\r\n/g,'\n');
+      let i;
+      while((i=buf.indexOf('\n\n'))>=0){
+        const ev=buf.slice(0,i);buf=buf.slice(i+2);
+        const line=ev.split('\n').find(l=>l.startsWith('data:'));if(!line)continue;
+        let j;try{j=JSON.parse(line.slice(5))}catch(_){continue}
+        if(j.modelVersion)mv=j.modelVersion;
+        const ps=(j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[];
+        for(const p of ps)if(p.text&&!p.thought){got+=p.text.length;onText(p.text)}
+      }
+    }
+    if(!got){const e=new Error('respuesta vacía');e.retry=true;throw e}
+    return mv;
+  }catch(e){
+    if(got)return mv;
+    throw e;
   }finally{clearTimeout(to)}
+}
+/* Prueba los modelos en el orden elegido; muestra el motivo real de cada fallo */
+async function ask(b64,my,onText){
+  const fails=[];
+  for(const mi of ORDER[S.model]||ORDER.auto){
+    if(my!==rid)throw new Error('cancelado');
+    const m=MODELS[mi];
+    try{return await callStream(m,b64,onText)}
+    catch(e){
+      fails.push(m+': '+e.message);
+      if(!e.retry)throw new Error(m+': '+e.message);
+      say('Falló '+m+' ('+e.message.slice(0,40)+'). Probando otro…',1);
+    }
+  }
+  throw new Error(fails.join(' | '));
 }
 
 /* ---------- Audio: voz por frases, bucle y retroceso de 5 s ---------- */
@@ -199,19 +284,56 @@ const P={ch:[],i:0,d:[],t0:0,on:0,pz:0,tok:0,el:0};
 let V=null;
 function pickVoice(){
   const l=speechSynthesis.getVoices().filter(v=>/^es/i.test(v.lang));
-  V=l.find(v=>/es[-_](US|MX|419)/i.test(v.lang))||l[0]||null;
+  V=l.find(v=>v.name===S.pvoice)||l.find(v=>/es[-_](US|MX|419)/i.test(v.lang))||l[0]||null;
 }
 speechSynthesis.addEventListener('voiceschanged',pickVoice);pickVoice();
 
 /* Respaldo: si se cuela algún símbolo, se convierte en palabras antes de hablar */
 const SYM={'+':' más ','−':' menos ','×':' por ','÷':' entre ','=':' igual ','²':' al cuadrado ','³':' al cubo ','√':' raíz cuadrada de ','π':' pi ','≤':' menor o igual que ','≥':' mayor o igual que ','≠':' distinto de ','{':' abre llave ','}':' cierra llave ','(':' abre paréntesis ',')':' cierra paréntesis ','[':' abre corchete ',']':' cierra corchete ','<':' menor que ','>':' mayor que ','/':' barra ','%':' por ciento ','&':' y ','^':' elevado a '};
 const clean=t=>t.replace(/(\d)\.(\d)/g,'$1 punto $2').replace(/ - /g,' menos ').replace(/[+−×÷=²³√π≤≥≠{}()\[\]<>\/%&^]/g,c=>SYM[c]).replace(/[*#`_~|]/g,' ').replace(/\s+/g,' ').trim();
-function split(t){
-  const s=(clean(t).match(/[^.!?;:]+[.!?;:]*/g)||[]).flatMap(x=>x.length>180?x.match(/[^,]+,?/g):[x]);
-  const o=[];let c='';
-  for(const x of s){if(c&&(c+x).length>170){o.push(c.trim());c=''}c+=x+' '}
-  if(c.trim())o.push(c.trim());
-  return o;
+const LET={a:'a',b:'be',c:'ce',d:'de',e:'e',f:'efe',g:'ge',h:'hache',i:'i',j:'jota',k:'ka',l:'ele',m:'eme',n:'ene',o:'o',p:'pe',q:'cu',r:'ere',s:'ese',t:'te',u:'u',v:'uve',w:'doble uve',x:'equis',y:'ye',z:'zeta'};
+const DIG=['cero','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve'];
+const SYMN={':':'dos puntos',';':'punto y coma','<':'menor que','>':'mayor que','(':'abre paréntesis',')':'cierra paréntesis','{':'abre llave','}':'cierra llave','[':'abre corchete',']':'cierra corchete','#':'numeral','"':'comillas dobles',"'":'comilla simple','_':'guion bajo','=':'igual','+':'más','-':'menos','*':'asterisco','/':'barra','\\':'barra invertida','.':'punto',',':'coma','&':'ampersand','!':'exclamación','%':'porcentaje','|':'barra vertical','~':'tilde','^':'acento circunflejo','?':'interrogación'};
+function spell(tok){
+  const r=[];
+  for(const ch of tok){
+    const lo=ch.toLowerCase();
+    if(LET[lo])r.push(ch!==lo?'mayúscula '+LET[lo]:LET[lo]);
+    else if(/\d/.test(ch))r.push(DIG[+ch]);
+    else if(SYMN[ch])r.push(SYMN[ch]);
+  }
+  return r;
+}
+/* Una línea → fragmentos para hablar. Lo que viene entre [[ ]] se deletrea carácter por carácter */
+function addLine(line){
+  line.split(/\[\[(.+?)\]\]/).forEach((seg,i,arr)=>{
+    if(i%2){const s=spell(seg);s.forEach((n,j)=>{P.ch.push(n);P.w.push(j===s.length-1?900:450)});return}
+    const t=clean(seg);
+    if(!/[a-záéíóúñ0-9]/i.test(t))return;
+    const parts=(t.match(/[^.!?;:]+[.!?;:]*/g)||[]).flatMap(x=>x.length>180?x.match(/[^,]+,?/g):[x]);
+    let c='';
+    for(const x of parts){if(c&&(c+x).length>170){P.ch.push(c.trim());P.w.push(350);c=''}c+=x+' '}
+    if(c.trim()){P.ch.push(c.trim());P.w.push(i===arr.length-1?900:400)}
+  });
+}
+const ALL=[];
+let useG=false,feedOpen=0;
+function emit(l){ALL.push(l);useG?gAdd(l):addLine(l)}
+function feed(d,end){
+  P.buf+=d;
+  const parts=P.buf.split('\n');P.buf=end?'':parts.pop();
+  for(const l of parts)emit(l);
+  if(!end&&P.buf.length>250){const m=P.buf.match(/^([\s\S]*[.!?])\s/);if(m){emit(m[1]);P.buf=P.buf.slice(m[0].length)}}
+}
+function startPhone(){P.ch=[];P.w=[];P.d=[];P.open=feedOpen;P.on=1;session();sil.play().catch(()=>{});from(0);ALL.forEach(addLine)}
+function startPlay(){
+  ALL.length=0;P.buf='';feedOpen=1;
+  useG=S.engine==='gemini'&&!!S.key;
+  if(useG)gStart();else startPhone();
+}
+function endFeed(){
+  feed('',1);feedOpen=0;
+  if(useG){G.open=0;gLoopIfIdle()}else P.open=0;
 }
 function from(i){
   speechSynthesis.cancel();
@@ -220,22 +342,19 @@ function from(i){
 }
 function nxt(k){
   if(k!==P.tok||!P.on||P.pz)return;
+  if(P.i>=P.ch.length){if(P.open)setTimeout(()=>nxt(k),250);else if(P.ch.length){P.i=0;setTimeout(()=>nxt(k),2000)}return}
   const u=new SpeechSynthesisUtterance(P.ch[P.i]);
   if(V){u.voice=V;u.lang=V.lang}else u.lang='es-ES';
+  u.rate=S.rate||.9;
   u.onstart=()=>{if(k===P.tok)P.t0=performance.now()};
   u.onend=u.onerror=()=>{
     if(k!==P.tok)return;
     P.d[P.i]=performance.now()-P.t0;
-    P.i++;let w=0;
-    if(P.i>=P.ch.length){P.i=0;w=1500}
-    setTimeout(()=>nxt(k),w||350);
+    let w=(P.w&&P.w[P.i])||350;P.i++;
+    if(P.i>=P.ch.length&&!P.open){P.i=0;w=2000}
+    setTimeout(()=>nxt(k),w);
   };
   speechSynthesis.speak(u);
-}
-function play(t){
-  P.ch=split(t);P.d=[];
-  if(!P.ch.length)return;
-  P.on=1;session();from(0);
 }
 function pz(){
   if(!P.on||P.pz)return;
@@ -249,8 +368,8 @@ function rz(){
   from(j);ps('playing');
 }
 function stop(){
-  P.on=0;P.tok++;
-  speechSynthesis.cancel();sil.pause();ps('none');
+  P.on=0;P.open=0;P.tok++;
+  speechSynthesis.cancel();sil.pause();gStop();ps('none');
 }
 const ps=s=>{if('mediaSession' in navigator)navigator.mediaSession.playbackState=s};
 function session(){
@@ -273,8 +392,158 @@ function session(){
 sil.addEventListener('pause',pz);
 sil.addEventListener('play',rz);
 function unlockAudio(){
-  sil.play().catch(()=>{});
+  if(S.engine==='gemini'){gp.src=sil.src;gp.play().catch(()=>{})}else sil.play().catch(()=>{});
   const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u);
+}
+
+/* ---------- Voz de Gemini: audio real en un reproductor ---------- */
+const RATE=24000,gp=$('#gp');
+const VOICES=['Zephyr','Puck','Charon','Kore','Fenrir','Leda','Orus','Aoede','Callirrhoe','Autonoe','Enceladus','Iapetus','Umbriel','Algieba','Despina','Erinome','Algenib','Rasalgethi','Laomedeia','Achernar','Alnilam','Schedar','Gacrux','Pulcherrima','Achird','Zubenelgenubi','Vindemiatrix','Sadachbia','Sadaltager','Sulafat'];
+const TM=[{id:'gemini-3.8-flash-tts',n:1},{id:'gemini-3.1-flash-tts-preview',n:0}];
+let tmi=0,DB;
+function db(){return DB||(DB=new Promise((ok,no)=>{const r=indexedDB.open('zf-voz',1);r.onupgradeneeded=()=>r.result.createObjectStore('s');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}))}
+async function dbGet(k){try{const d=await db();return await new Promise(ok=>{const q=d.transaction('s').objectStore('s').get(k);q.onsuccess=()=>ok(q.result||null);q.onerror=()=>ok(null)})}catch(e){return null}}
+async function dbSet(k,v){try{const d=await db();d.transaction('s','readwrite').objectStore('s').put(v,k)}catch(e){}}
+function pcmOf(b64){
+  const s=atob(b64),u=new Uint8Array(s.length);
+  for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);
+  const o=s.slice(0,4)==='RIFF'?44:0,p=new Int16Array(u.buffer.slice(o,o+((u.length-o)&~1)));
+  let a=0,b=p.length-1;
+  while(a<b&&Math.abs(p[a])<400)a++;
+  while(b>a&&Math.abs(p[b])<400)b--;
+  return new Int16Array(p.subarray(Math.max(0,a-1440),Math.min(p.length,b+1440)));
+}
+function wav(pcm){
+  const b=new DataView(new ArrayBuffer(44+pcm.length*2)),s=(o,t)=>[...t].forEach((c,i)=>b.setUint8(o+i,c.charCodeAt(0)));
+  s(0,'RIFF');b.setUint32(4,36+pcm.length*2,true);s(8,'WAVEfmt ');b.setUint32(16,16,true);b.setUint16(20,1,true);b.setUint16(22,1,true);
+  b.setUint32(24,RATE,true);b.setUint32(28,RATE*2,true);b.setUint16(32,2,true);b.setUint16(34,16,true);s(36,'data');b.setUint32(40,pcm.length*2,true);
+  new Int16Array(b.buffer,44).set(pcm);
+  return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));
+}
+async function ttsReq(text){
+  let err=new Error('sin respuesta');
+  for(let a=0;a<TM.length;a++){
+    const m=TM[(tmi+a)%TM.length];
+    for(let t=0;t<3;t++){
+      let r;
+      const body=m.n?{contents:[{role:'user',parts:[{text,speech_metadata:{style:'en español, con voz clara y ritmo pausado'}}]}],generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{voice:S.voice}}}}
+        :{contents:[{parts:[{text:'Di en español, con voz clara y ritmo pausado: '+text}]}],generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:S.voice}}}}};
+      try{r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m.id+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':S.key},body:JSON.stringify(body)})}
+      catch(e){err=new Error('sin conexión');break}
+      const j=await r.json().catch(()=>({}));
+      if(r.ok){
+        const p=((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).find(x=>x.inlineData||x.inline_data);
+        const d=p&&(p.inlineData||p.inline_data).data;
+        if(d){tmi=(tmi+a)%TM.length;return pcmOf(d)}
+        err=new Error(m.id+': respuesta sin audio');break;
+      }
+      err=new Error(m.id+': '+((j.error&&j.error.message)||r.status));
+      if([429,500,503].includes(r.status)&&t<2){await new Promise(z=>setTimeout(z,2500*(t+1)));continue}
+      break;
+    }
+  }
+  throw err;
+}
+/* Las frases cortas y los sonidos de letras/símbolos se guardan en el teléfono y se piden una sola vez */
+async function tts(text){
+  const key=S.voice+'|'+text,c=await dbGet(key);
+  if(c)return new Int16Array(c);
+  const p=await ttsReq(text);
+  if(text.length<=60)dbSet(key,new Int16Array(p).buffer);
+  return p;
+}
+function chunks(t){
+  const s=(t.match(/[^.!?;:]+[.!?;:]*/g)||[]).flatMap(x=>x.length>180?x.match(/[^,]+,?/g):[x]),o=[];let c='';
+  for(const x of s){if(c&&(c+x).length>170){o.push(c.trim());c=''}c+=x+' '}
+  if(c.trim())o.push(c.trim());
+  return o;
+}
+function gUnits(line){
+  const sg=line.split(/\[\[(.+?)\]\]/);
+  if(sg.length===1){const t=clean(line);return /[a-záéíóúñ0-9]/i.test(t)?chunks(t).map((c,i,a)=>[['t',c,i===a.length-1?900:350]]):[]}
+  const u=[];
+  sg.forEach((s,i,a)=>{
+    if(i%2){const n=spell(s);n.forEach((x,j)=>u.push(['k',x,j===n.length-1?900:450]))}
+    else{const t=clean(s);if(/[a-záéíóúñ0-9]/i.test(t))u.push(['t',t,i===a.length-1?900:400])}
+  });
+  return u.length?[u]:[];
+}
+async function gBuild(u){
+  const parts=[];let n=0;
+  for(const [kd,x,g] of u){
+    const p=await tts(x),z=new Int16Array(Math.round(RATE*g/1000));
+    parts.push(p,z);n+=p.length+z.length;
+  }
+  const all=new Int16Array(n);let o=0;
+  for(const p of parts){all.set(p,o);o+=p.length}
+  return {url:wav(all),dur:n/RATE};
+}
+const G={q:[],todo:[],i:0,on:0,open:0,tok:0,pz:0,pp:0,busy:0,wait:0,swT:0};
+function gStop(){
+  G.on=0;G.tok++;G.todo=[];G.busy=0;G.wait=0;G.pz=0;G.i=0;
+  gp.pause();gp.removeAttribute('src');
+  G.q.forEach(x=>URL.revokeObjectURL(x.url));G.q=[];
+}
+function gStart(){gStop();G.on=1;G.open=1;gsession()}
+function gAdd(l){G.todo.push(l);gPump()}
+async function gPump(){
+  if(G.busy)return;
+  G.busy=1;const k=G.tok;
+  try{
+    while(G.todo.length&&G.on&&k===G.tok){
+      const line=G.todo.shift();
+      for(const u of gUnits(line)){
+        const it=await gBuild(u);
+        if(k!==G.tok)return;
+        G.q.push(it);
+        if(G.wait||G.q.length===1){G.wait=0;gPlay(G.q.length-1);if(G.q.length===1)say('Reproduciendo…')}
+      }
+    }
+    if(k===G.tok){G.busy=0;gLoopIfIdle()}
+  }catch(e){if(k===G.tok){G.busy=0;gFail(e.message||String(e))}}
+}
+function gPlay(i){
+  G.i=i;G.swT=performance.now();
+  gp.src=G.q[i].url;gp.playbackRate=S.rate;
+  const p=gp.play();if(p&&p.catch)p.catch(()=>{});
+}
+function gLoopIfIdle(){
+  if(G.wait&&!G.busy&&!G.todo.length&&!G.open){G.wait=0;const k=G.tok;setTimeout(()=>{if(G.on&&k===G.tok)gPlay(0)},2000)}
+}
+const gPos=()=>{let t=0;for(let k=0;k<G.i;k++)t+=G.q[k].dur;return t+gp.currentTime};
+function gSeek(t){
+  let k=0;
+  while(k<G.q.length-1&&t>=G.q[k].dur){t-=G.q[k].dur;k++}
+  if(k===G.i)gp.currentTime=Math.max(0,t);
+  else{G.i=k;G.swT=performance.now();gp.src=G.q[k].url;gp.currentTime=t;gp.playbackRate=S.rate;gp.play().catch(()=>{})}
+}
+gp.onended=()=>{
+  if(!G.on)return;
+  if(G.i+1<G.q.length)gPlay(G.i+1);
+  else if(G.open||G.busy||G.todo.length)G.wait=1;
+  else{G.wait=1;gLoopIfIdle()}
+};
+/* Pausa (por ejemplo al quitarte un audífono): al reanudar vuelve 5 segundos atrás */
+gp.onpause=()=>{
+  if(!G.on||gp.ended||performance.now()-G.swT<300)return;
+  G.pz=1;G.pp=gPos();ps('paused');
+};
+gp.onplay=()=>{
+  if(!G.on||!G.pz)return;
+  G.pz=0;gSeek(Math.max(0,G.pp-5));ps('playing');
+};
+function gsession(){
+  if(!('mediaSession' in navigator))return;
+  const m=navigator.mediaSession;
+  m.metadata=new MediaMetadata({title:'Explicación en audio',artist:'Cero Fricción'});
+  m.setActionHandler('play',()=>gp.play().catch(()=>{}));
+  m.setActionHandler('pause',()=>gp.pause());
+}
+function gFail(why){
+  if(!useG)return;
+  gStop();useG=false;
+  say('Voz de Gemini no disponible ('+String(why).slice(0,70)+'). Usando la del teléfono…');
+  startPhone();
 }
 
 /* ---------- Flujo: toque → foto → análisis → audio ---------- */
@@ -282,30 +551,52 @@ let mode='live',lock=0;
 st.addEventListener('pointerup',e=>{
   if(e.target.closest('.ctl')||Date.now()<lock)return;
   lock=Date.now()+600;
-  if(mode==='live')shoot();
-  else if(mode==='result')back();
+  if(mode==='live'&&S.mode==='viewer')shoot();
 });
-async function shoot(){
-  if(!S.key){openSet();return}
-  if(!stream||vid.readyState<2){say('La cámara aún no está lista');return}
-  mode='busy';say('Capturando…',1);unlockAudio();
+let rid=0;
+async function analyze(getB64){
+  const my=++rid;let started=0;mode='busy';say('Preparando…',1);
   try{
-    const b64=await snap();
+    const b64=await getB64();if(my!==rid)return;
     st.classList.add('res');say('Analizando…',1);
-    const t=await ask(b64);
-    mode='result';play(t);say('Reproduciendo. Toca para una nueva foto');
+    const mv=await ask(b64,my,d=>{
+      if(my!==rid)return;
+      if(!started){started=1;startPlay();mode='result';say(useG?'Preparando la voz…':'Reproduciendo…')}
+      feed(d);
+    });
+    if(my!==rid)return;
+    endFeed();say('Reproduciendo · '+mv+(useG?' · voz '+S.voice:' · voz del teléfono'));
   }catch(err){
+    if(my!==rid)return;
     mode='result';st.classList.add('res');
-    say('Error: '+String(err.message||err).slice(0,90)+'. Toca para volver');
+    say('Error: '+String(err.message||err).slice(0,260));
   }
 }
-function back(){stop();mode='live';st.classList.remove('res');say('')}
+function shoot(){
+  if(!S.key){openSet();return}
+  if(!stream||vid.readyState<2){say('La cámara aún no está lista');return}
+  unlockAudio();analyze(snap);
+}
+/* Modo cámara del teléfono: abre la app de cámara real y analiza sola al volver */
+const nat=$('#nat');
+function openNat(){
+  if(!S.key){openSet();return}
+  unlockAudio();nat.value='';nat.click();
+}
+async function fromFile(f){
+  const b=await createImageBitmap(f),k=Math.min(1,1800/Math.max(b.width,b.height));
+  cv.width=Math.round(b.width*k);cv.height=Math.round(b.height*k);
+  cv.getContext('2d').drawImage(b,0,0,cv.width,cv.height);
+  return cv.toDataURL('image/jpeg',.85).split(',')[1];
+}
+nat.onchange=()=>{const f=nat.files[0];if(f)analyze(()=>fromFile(f))};
+function back(){rid++;stop();mode='live';st.classList.remove('res');say('')}
 
 /* ---------- Ajustes ---------- */
 function sync(){
   sheet.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(S[g.dataset.k])===b.dataset.v)));
 }
-function openSet(){keyI.value=S.key;sync();sheet.classList.add('open')}
+function openSet(){keyI.value=S.key;sync();showRate();sysI.value=S.sys||SYS;fillPv();gv.value=S.voice;sheet.classList.add('open')}
 $('#gear').onclick=openSet;
 $('#ok').onclick=()=>sheet.classList.remove('open');
 sheet.onclick=e=>{if(e.target===sheet)sheet.classList.remove('open')};
@@ -313,15 +604,54 @@ keyI.oninput=()=>{S.key=keyI.value.trim();save()};
 sheet.querySelectorAll('.seg').forEach(g=>g.onclick=e=>{
   const b=e.target.closest('button');if(!b)return;
   const k=g.dataset.k;S[k]=k==='zoom'?+b.dataset.v:b.dataset.v;save();sync();
-  if(k==='zoom')setZoom(S.zoom);
+  if(k==='zoom'&&stream)setZoom(S.zoom);if(k==='mode')applyMode();
 });
 
+document.querySelectorAll('.ver').forEach(e=>e.textContent='Versión '+VER);
+const sysI=$('#sys');
+sysI.oninput=()=>{S.sys=sysI.value;save()};
+$('#rst').onclick=()=>{S.sys='';save();sysI.value=SYS};
+const gv=$('#gv'),pv=$('#pv');
+gv.innerHTML=VOICES.map(v=>`<option>${v}</option>`).join('');
+gv.onchange=()=>{S.voice=gv.value;save()};
+function fillPv(){
+  const l=speechSynthesis.getVoices().filter(v=>/^es/i.test(v.lang));
+  pv.innerHTML='<option value="">Automática</option>'+l.map(v=>`<option value="${v.name}">${v.name} (${v.lang})</option>`).join('');
+  pv.value=S.pvoice||'';
+}
+pv.onchange=()=>{S.pvoice=pv.value;save();pickVoice()};
+speechSynthesis.addEventListener('voiceschanged',fillPv);
+$('#tv').onclick=async()=>{
+  const o=$('#tvs');o.textContent='Generando…';
+  try{
+    const p=await tts('Hola, así suena esta voz. Escribe: ese, te, de.');
+    const a=new Audio(wav(p));a.playbackRate=S.rate;await a.play();o.textContent='';
+  }catch(e){o.textContent='Error: '+String(e.message||e).slice(0,120)}
+};
+$('#shutter').onclick=openNat;
+$('#back').onclick=()=>{back();if(S.mode==='native')openNat()};
+const rateI=$('#rate'),rv=$('#rv');
+function showRate(){S.rate=+S.rate||.9;rateI.value=S.rate;rv.textContent=S.rate.toFixed(2)+'x'}
+rateI.oninput=()=>{S.rate=+rateI.value;save();gp.playbackRate=S.rate;rv.textContent=S.rate.toFixed(2)+'x'};
+rateI.onchange=()=>{
+  if(P.on)return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance('Escribe: i, ene, te. Deja un espacio.');
+  if(V){u.voice=V;u.lang=V.lang}else u.lang='es-ES';
+  u.rate=S.rate;speechSynthesis.speak(u);
+};
+function applyMode(){
+  const isN=S.mode==='native';
+  st.classList.toggle('nat',isN);
+  if(isN){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
+  else cam();
+}
 /* ---------- Arranque ---------- */
 document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden&&mode==='live'&&(!stream||stream.getTracks()[0].readyState!=='live'))cam();
+  if(!document.hidden&&mode==='live'&&S.mode==='viewer'&&(!stream||stream.getTracks()[0].readyState!=='live'))cam();
 });
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-cam();
+applyMode();
 if(!S.key)openSet();
 </script>
 </body>
