@@ -33,8 +33,8 @@ canvas{display:none}
 #zb button{width:42px;height:42px;border:0;border-radius:50%;background:transparent;color:#fff;font:600 14px system-ui,sans-serif;transition:.15s}
 #zb button.on{background:rgba(255,255,255,.16);color:var(--ac);transform:scale(1.08)}
 button{cursor:pointer}
-#set{position:absolute;inset:0;display:none;align-items:flex-end;background:rgba(0,0,0,.6)}
-#set.open{display:flex}
+#set,#exed{position:absolute;inset:0;display:none;align-items:flex-end;background:rgba(0,0,0,.6)}
+#set.open,#exed.open{display:flex}
 .card{width:100%;max-width:520px;max-height:92dvh;overflow-y:auto;margin:0 auto;background:#1c1c1e;border-radius:24px 24px 0 0;padding:22px 20px calc(env(safe-area-inset-bottom,0px) + 22px)}
 h2{margin:0 0 4px;font-size:20px}
 label{display:block;margin:18px 0 8px;font-size:13px;color:#aeaeb2}
@@ -58,6 +58,29 @@ textarea{font-size:13px;line-height:1.4;height:220px;resize:vertical}
 #idle .ver{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);margin:0}
 select{width:100%;padding:12px;border-radius:12px;border:1px solid #3a3a3c;background:#000;color:#fff;font-size:16px}
 #tv{margin-top:8px;padding:10px 14px;border:1px solid #3a3a3c;border-radius:10px;background:transparent;color:#aeaeb2;font:600 14px system-ui,sans-serif}
+#newc{pointer-events:auto;background:none;border:0;color:#aeaeb2;font-size:13px;text-decoration:underline;padding:10px}
+.tb{margin:8px 6px 0 0;padding:10px 14px;border:1px solid #3a3a3c;border-radius:10px;background:transparent;color:#aeaeb2;font:600 14px system-ui,sans-serif}
+.exr{display:flex;gap:6px;align-items:center;margin:6px 0}
+.exr span{flex:1;min-width:0;font-size:13px;color:#aeaeb2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.exr button{padding:7px 10px;border:1px solid #3a3a3c;border-radius:8px;background:transparent;color:#aeaeb2;font-size:12px}
+.exr button.on{color:var(--ac)}
+#bkt{height:90px}#exq,#exa{height:150px}
+#chat{position:absolute;inset:0;display:none;flex-direction:column;background:#000;padding-top:env(safe-area-inset-top,0px)}
+#chat.open{display:flex}
+.ch{display:flex;align-items:center;gap:10px;padding:10px 14px}
+.ch b{flex:1;font-size:17px}
+#cb{width:44px;height:44px;padding:0;border-radius:50%;color:#fff;display:grid;place-items:center}
+#msgs{flex:1;min-height:0;overflow-y:auto;padding:8px 14px;display:flex;flex-direction:column;gap:10px;user-select:text;-webkit-user-select:text}
+.bu,.ba{max-width:90%;padding:10px 14px;border-radius:16px;white-space:pre-wrap;font-size:15px;line-height:1.45}
+.bu{align-self:flex-end;background:#2c2c2e}
+.ba{align-self:flex-start;background:#1c1c1e}
+.bm{font-size:11px;color:#8e8e93;margin-top:6px}
+.bs{margin-top:6px;padding:6px 10px;border:1px solid #3a3a3c;border-radius:9px;background:transparent;color:var(--ac);font-size:12px}
+#cstat{padding:2px 16px;font-size:12px;color:#aeaeb2;min-height:18px}
+.cin{display:flex;gap:8px;align-items:flex-end;padding:8px 14px calc(env(safe-area-inset-bottom,0px) + 10px)}
+#ci{height:56px;max-height:140px;flex:1}
+.cin button{padding:12px;border:0;border-radius:12px;background:#2c2c2e;color:#fff;font:600 14px system-ui,sans-serif}
+#cs{background:var(--ac);color:#000}
 #ok{width:100%;margin-top:24px;padding:14px;border:0;border-radius:14px;background:var(--ac);color:#000;font:700 16px system-ui,sans-serif}
 </style>
 </head>
@@ -66,7 +89,7 @@ select{width:100%;padding:12px;border-radius:12px;border:1px solid #3a3a3c;backg
   <video id="v" autoplay playsinline muted></video>
   <canvas id="c"></canvas>
   <div class="shade"></div>
-  <div id="idle"><button id="shutter" class="ctl ring" aria-label="Abrir cámara"></button><span>Toca el círculo para abrir la cámara</span><span class="ver"></span></div>
+  <div id="idle"><button id="shutter" class="ctl ring" aria-label="Abrir cámara"></button><span>Toca el círculo para abrir la cámara</span><button id="newc" class="ctl" style="display:none">Conversación activa · Empezar una nueva</button><span class="ver"></span></div>
   <div id="pill" class="glass"></div>
   <button id="back" class="ctl glass" aria-label="Volver">
     <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
@@ -108,8 +131,41 @@ select{width:100%;padding:12px;border-radius:12px;border:1px solid #3a3a3c;backg
       <textarea id="sys" spellcheck="false"></textarea>
       <button id="rst">Restaurar las originales</button>
       <small>Si una versión nueva trae instrucciones mejoradas, pulsa Restaurar para tomarlas.</small>
+      <label>Memoria en la cámara</label>
+      <div class="seg" data-k="camMem"><button data-v="on">Activada</button><button data-v="off">Desactivada</button></div>
+      <small>Recuerda los últimos 3 intercambios y se reinicia tras 30 minutos sin usar la app.</small>
+      <button id="newc2" class="tb">Empezar una nueva conversación</button>
+      <button id="openChat" class="tb">Abrir el chat de prueba</button>
+      <label>Ejemplos guardados <span id="exs"></span></label>
+      <div id="exl"></div>
+      <label>Copia de seguridad (sin tu clave)</label>
+      <textarea id="bkt" spellcheck="false" placeholder="Aquí aparece la copia, o pega una para restaurar"></textarea>
+      <button id="bk" class="tb">Copiar copia de seguridad</button><button id="rs" class="tb">Restaurar desde la caja</button>
+      <small id="bkm"></small>
       <button id="ok">Listo</button>
       <span class="ver"></span>
+    </div>
+  </div>
+  <div id="chat" class="ctl">
+    <div class="ch">
+      <button id="cb" class="glass" aria-label="Volver"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
+      <b>Chat de prueba</b>
+      <button id="cn" class="tb" style="margin:0">Nueva conversación</button>
+    </div>
+    <div id="msgs"></div>
+    <div id="cstat"></div>
+    <div class="cin"><textarea id="ci" placeholder="Pega aquí el ejercicio en texto…"></textarea><button id="cstop">Parar voz</button><button id="cs">Enviar</button></div>
+  </div>
+  <div id="exed" class="ctl">
+    <div class="card">
+      <h2>Ejemplo</h2>
+      <label for="exq">Ejercicio</label>
+      <textarea id="exq" spellcheck="false"></textarea>
+      <label for="exa">Respuesta aprobada</label>
+      <textarea id="exa" spellcheck="false"></textarea>
+      <small id="exm"></small>
+      <button id="exok">Guardar</button>
+      <button id="exno" class="tb">Cancelar</button>
     </div>
   </div>
 </div>
@@ -120,34 +176,59 @@ select{width:100%;padding:12px;border-radius:12px;border:1px solid #3a3a3c;backg
 const $=s=>document.querySelector(s);
 const st=$('#stage'),vid=$('#v'),cv=$('#c'),pill=$('#pill'),zb=$('#zb'),sheet=$('#set'),keyI=$('#key'),sil=$('#sil');
 const LVL={low:'LOW',mid:'MEDIUM',high:'HIGH'};
-const VER='v7';
+const VER='v8';
 const MODELS=['gemini-flash-latest','gemini-3.6-flash','gemini-3.5-flash-lite'];
 const ORDER={auto:[0,1,2],est:[1,0,2],rap:[2,1,0]};
-const SYS=`Eres un profesor particular de programación, algoritmos, lógica y matemáticas que habla con el estudiante por audio, mientras este camina con audífonos. Recibes una foto de código, pseudocódigo, un diagrama de flujo, un ejercicio o apuntes.
+const SYS=`Eres un profesor particular de matemáticas avanzadas, cálculo y ecuaciones diferenciales que habla con el estudiante por audio, mientras este camina con audífonos y lleva un cuaderno y un lápiz en la mano para escribir todo a mano, paso a paso, en papel. Recibes una foto de apuntes, ejercicios de ecuaciones diferenciales lineales homogéneas de orden superior, cálculos del Wronskiano, aplicaciones del Teorema de Superposición, soluciones generales o demostraciones del Teorema de Abel.
 
-Reglas de formato, porque tu respuesta se lee en voz alta:
-- Solo texto plano en español: sin markdown, listas, viñetas, asteriscos, emojis ni bloques de código.
-- Escribe los números con palabras y las variables como suenan: equis, ye, zeta, ene, eme.
-- Nunca escribas símbolos matemáticos ni de programación (el signo de suma, el igual, paréntesis, llaves, punto y coma): escribe su nombre con palabras.
-- Frases cortas, una sola instrucción por frase, para que la voz haga pausas. En los dictados, escribe cada instrucción en su propia línea de texto: entre líneas la voz hará una pausa larga para que el estudiante escriba o dibuje.
-- Empieza directo, sin saludos.
+Reglas estrictas de formato y estilo, porque tu respuesta se leerá completa en voz alta:
 
-Primero decide qué pide la foto.
+Utiliza únicamente texto plano en español: sin ningún tipo de markdown, sin listas con viñetas, sin asteriscos, sin emojis y sin bloques de código.
 
-CASO A. La foto ya contiene código, un diagrama o una solución y no pide construir nada. Explícalo como un profesor, de forma conversacional: qué hace en general, el recorrido de la lógica y el propósito de cada bloque. En un diagrama recórrelo desde el inicio y di qué pasa por el sí y por el no en cada decisión. Señala los errores que veas. Traduce la sintaxis a lenguaje hablado, por ejemplo: se repite mientras i sea menor que diez. Máximo unas 350 palabras y cierra con un resumen en una frase.
+Ritmo ultra pausado y deliberado: Habla de forma sumamente lenta, rítmica, formal y calmada. Utiliza frases muy cortas separadas por puntos continuos. Obliga a la voz a hacer una pausa clara y perceptible entre cada palabra individual y cada término matemático, para que el estudiante pueda procesarlo y plasmarlo con su lápiz en el papel mientras camina sin prisa.
 
-CASO B. La foto es un ejercicio que pide resolver algo, hacer un diagrama de flujo o escribir código. Resuélvelo y dicta la solución para que el estudiante la dibuje o la escriba en su cuaderno mientras escucha, sin mirar la pantalla. Empieza con una frase que diga qué pide el ejercicio y qué vas a dictar. Luego dicta, en este orden y solo lo que el ejercicio pida: la solución matemática, el diagrama de flujo y el código. Al final resume en una frase cómo funciona la solución. Aquí no hay límite de palabras: es más importante dictar completo que ser breve, pero sin relleno.
+Escribe todos los números con palabras y nombra cada variable, subíndice u operador tal como suena: equis, ye, zeta, ene, eme, ye sub uno, ye sub dos, derivada de orden dos de ye respecto a equis.
 
-Dictado de matemáticas. Dicta cada expresión en el orden en que se escribe y marca dónde empieza y dónde termina cada estructura, porque el oído no ve la agrupación. Ejemplo: Escribe ocho más cinco. Debajo pon una raya de fracción y, bajo la raya, escribe dos. Fin de la fracción. A la derecha escribe el signo igual, deja un espacio y escribe siete. Para paréntesis di abre paréntesis y cierra paréntesis. Para potencias di elevado a la dos, fin del exponente. Para raíces di raíz cuadrada de, y al terminar, fin de la raíz. Después del dictado, resuelve paso a paso: en cada paso vuelve a dictar la expresión que resulta, de la misma forma, y di el resultado parcial. Termina diciendo con claridad la respuesta final.
+Nunca escribas símbolos matemáticos directos (prohibido el signo de suma, el signo igual, paréntesis, llaves, corchetes, barras de división o flechas): escribe siempre su nombre completo con palabras.
 
-Dictado de diagramas de flujo. Dicta las figuras de arriba hacia abajo, siempre con los mismos nombres: óvalo para inicio y fin, paralelogramo para entrada y salida de datos, rectángulo para procesos, rombo para decisiones y círculo pequeño para conectores. Ejemplo: Dibuja un óvalo y escribe dentro: Inicio. Debajo, dibuja una flecha hacia abajo. Dibuja un paralelogramo y escribe dentro: leer ene. En cada rombo di qué se escribe dentro, de qué lado sale el sí, de qué lado sale el no y qué se escribe sobre cada flecha. Dicta cada camino hasta que se una con otro o regrese a una figura anterior, nombrando esa figura. Al terminar di: fin del diagrama.
+Cero relleno y cero introducciones conversacionales: Prohibido decir frases como vamos a resolver, vamos a analizar, aquí tenemos o similares. Ve directo al grano desde la primera palabra.
 
-Dictado de código. El estudiante escribe el código a mano, en papel, así que habla para alguien que tiene un lápiz en la mano: nunca menciones teclado, enter ni tabulador. Dicta línea por línea, empezando cada una con su número: Línea uno. Cada instrucción va en su propia línea de texto, con un solo elemento por línea. Todo lo que sea código (palabras clave, nombres de variables y funciones, símbolos, operadores y números) escríbelo entre dobles corchetes, exactamente como va en el código, sin decir su nombre ni deletrearlo: la aplicación lo deletreará letra por letra. Por ejemplo: Escribe: [[std]]. Luego: Escribe: [[::]]. Luego: Escribe: [[cout]]. No uses dobles corchetes para nada más. Entre un elemento y otro di, en su propia línea: deja un espacio. Al terminar una línea de código di: pasa a la siguiente línea del papel. Para la sangría di: deja cuatro espacios de sangría desde el margen. Al terminar di: fin del código.`;
+Primero, analiza la foto recibida y ubícala en su tema clave: Ecuaciones diferenciales lineales homogéneas de orden superior, Principio o Teorema de Superposición, Cálculo y análisis del Wronskiano, Solución general del caso homogéneo, o Teorema de Abel.
 
-let S={key:'',think:'mid',zoom:1,mode:'native',rate:.9,model:'auto',sys:'',engine:'gemini',voice:'Kore',pvoice:''};
+CASO A. La foto contiene teoría, una ecuación ya desarrollada o una demostración y no pide resolver nada nuevo. Di el tema en una frase corta y explica de forma directa, técnica y muy pausada los conceptos clave, el comportamiento de las raíces, la independencia lineal o la relación teórica, sin saludos ni rodeos. Cierra con un resumen conceptual definitivo en una sola frase.
+
+CASO B. La foto presenta un ejercicio que pide resolver algo. Sigue estrictamente esta estructura exacta, sin texto de más:
+
+Di únicamente el nombre del tema.
+
+Repite en una frase muy breve lo que pide el ejercicio.
+
+Comienza de inmediato con el dictado paso a paso para el papel, utilizando pausas extremas entre palabra y palabra.
+
+Estructura detallada para el dictado en papel (Caso B):
+
+Guía al estudiante indicando la disposición en la hoja mediante frases cortas y pausadas. Ejemplo: Escribe en la parte superior de tu hoja. Abre paréntesis. Escribe el operador diferencial. Cierra paréntesis. Escribe igual a cero. Pausa.
+
+Para derivadas, di: derivada de orden tres de ye respecto a equis. Pausa. Menos el coeficiente. Por la derivada de orden dos de ye respecto a equis. Pausa.
+
+Para el polinomio característico, di: sustituye ye por la exponencial de erre por equis. Pausa. Factoriza el polinomio auxiliar. Pausa. Obtén las raíces. Pausa.
+
+Para matrices o el Wronskiano, di: Dibuja un determinante de orden dos en tu hoja. Pausa. Primera fila horizontal. Escribe ye sub uno. Escribe ye sub dos. Pausa. Segunda fila horizontal. Escribe la derivada de ye sub uno. Escribe la derivada de ye sub dos. Cierra el determinante. Pausa.
+
+Dicta el desarrollo del determinante paso a paso: multiplica la primera función por la derivada de la segunda función. Pausa. Menos. Abre paréntesis. La segunda función por la derivada de la primera función. Cierra paréntesis. Pausa.
+
+Para agrupar o operar, di: abre paréntesis. Pausa. Cierra paréntesis. Pausa. Elevado a la dos. Pausa. Fin del exponente. Pausa. Por. Pausa. Más. Pausa. Menos. Pausa. Igual. Pausa.
+
+Dicta los cálculos parciales de forma aislada y pausada antes de avanzar al siguiente renglón.
+
+Concluye ensamblando la solución general final como combinación lineal de las soluciones fundamentales multiplicadas por constantes arbitrarias, por ejemplo ce uno y ce dos.
+
+Finaliza el ejercicio con una frase clara que resuma el resultado obtenido en el papel.`;
+
+let S={key:'',think:'mid',zoom:1,mode:'native',rate:.9,model:'auto',sys:'',engine:'gemini',voice:'Kore',pvoice:'',ex:[],camMem:'on'};
 try{Object.assign(S,JSON.parse(localStorage.getItem('zf')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('zf',JSON.stringify(S))}catch(e){}};
-const say=(t,busy)=>{pill.textContent=t;pill.classList.toggle('busy',!!busy);pill.classList.toggle('on',!!t)};
+const say=(t,busy)=>{pill.textContent=t;pill.classList.toggle('busy',!!busy);pill.classList.toggle('on',!!t);const c=document.getElementById('cstat');if(c)c.textContent=t||''};
 
 /* ---------- Cámara y zoom ---------- */
 let stream,track,hw=false,cap={},zoom=1,mainId=null,curId=null,backs=[];
@@ -217,7 +298,13 @@ async function snap(){
 }
 
 /* ---------- Gemini (respuesta por partes) ---------- */
-async function callStream(m,b64,onText){
+function sysText(){
+  let s=(S.sys&&S.sys.trim())?S.sys:SYS;
+  const ex=(S.ex||[]).filter(e=>e.on);
+  if(ex.length)s+='\n\nEJEMPLOS APROBADOS. Imita exactamente su formato, su estructura, su nivel de detalle y su estilo al responder. Si el ejercicio es el mismo, sigue la misma estructura.\n'+ex.map((e,i)=>'\nEjemplo '+(i+1)+'.\nEjercicio:\n'+e.q+'\nRespuesta aprobada:\n'+e.a).join('\n');
+  return s;
+}
+async function callStream(m,contents,onText){
   const ac=new AbortController(),T=S.think==='high'?70000:40000;
   let to,got=0,mv=m;
   const arm=()=>{clearTimeout(to);to=setTimeout(()=>ac.abort(),T)};
@@ -229,8 +316,8 @@ async function callStream(m,b64,onText){
         method:'POST',signal:ac.signal,
         headers:{'Content-Type':'application/json','x-goog-api-key':S.key},
         body:JSON.stringify({
-          systemInstruction:{parts:[{text:(S.sys&&S.sys.trim())?S.sys:SYS}]},
-          contents:[{role:'user',parts:[{inline_data:{mime_type:'image/jpeg',data:b64}},{text:'Explícame esto por audio.'}]}],
+          systemInstruction:{parts:[{text:sysText()}]},
+          contents,
           generationConfig:{thinkingConfig:{thinkingLevel:LVL[S.think]}}
         })
       });
@@ -264,12 +351,12 @@ async function callStream(m,b64,onText){
   }finally{clearTimeout(to)}
 }
 /* Prueba los modelos en el orden elegido; muestra el motivo real de cada fallo */
-async function ask(b64,my,onText){
+async function ask(contents,my,onText){
   const fails=[];
   for(const mi of ORDER[S.model]||ORDER.auto){
     if(my!==rid)throw new Error('cancelado');
     const m=MODELS[mi];
-    try{return await callStream(m,b64,onText)}
+    try{return await callStream(m,contents,onText)}
     catch(e){
       fails.push(m+': '+e.message);
       if(!e.retry)throw new Error(m+': '+e.message);
@@ -318,7 +405,9 @@ function addLine(line){
 }
 const ALL=[];
 let useG=false,feedOpen=0;
-function emit(l){ALL.push(l);useG?gAdd(l):addLine(l)}
+function emit(l){
+  for(const s of l.replace(/\bPausa\.\s*/gi,'\n').split('\n')){if(s.trim()){ALL.push(s);useG?gAdd(s):addLine(s)}}
+}
 function feed(d,end){
   P.buf+=d;
   const parts=P.buf.split('\n');P.buf=end?'':parts.pop();
@@ -555,17 +644,20 @@ st.addEventListener('pointerup',e=>{
 });
 let rid=0;
 async function analyze(getB64){
-  const my=++rid;let started=0;mode='busy';say('Preparando…',1);
+  const my=++rid;let started=0,full='';mode='busy';say('Preparando…',1);
   try{
     const b64=await getB64();if(my!==rid)return;
     st.classList.add('res');say('Analizando…',1);
-    const mv=await ask(b64,my,d=>{
+    const mem=S.camMem!=='off';
+    const cont=(mem?memContents():[]).concat([{role:'user',parts:[{inline_data:{mime_type:'image/jpeg',data:b64}},{text:'Explícame esto por audio.'}]}]);
+    const mv=await ask(cont,my,d=>{
       if(my!==rid)return;
       if(!started){started=1;startPlay();mode='result';say(useG?'Preparando la voz…':'Reproduciendo…')}
-      feed(d);
+      full+=d;feed(d);
     });
     if(my!==rid)return;
-    endFeed();say('Reproduciendo · '+mv+(useG?' · voz '+S.voice:' · voz del teléfono'));
+    endFeed();if(mem)memPush('[foto de un ejercicio]',full,1);
+    say('Reproduciendo · '+mv+(useG?' · voz '+S.voice:' · voz del teléfono'));
   }catch(err){
     if(my!==rid)return;
     mode='result';st.classList.add('res');
@@ -590,13 +682,13 @@ async function fromFile(f){
   return cv.toDataURL('image/jpeg',.85).split(',')[1];
 }
 nat.onchange=()=>{const f=nat.files[0];if(f)analyze(()=>fromFile(f))};
-function back(){rid++;stop();mode='live';st.classList.remove('res');say('')}
+function back(){rid++;stop();mode='live';st.classList.remove('res');say('');updNew()}
 
 /* ---------- Ajustes ---------- */
 function sync(){
   sheet.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(S[g.dataset.k])===b.dataset.v)));
 }
-function openSet(){keyI.value=S.key;sync();showRate();sysI.value=S.sys||SYS;fillPv();gv.value=S.voice;sheet.classList.add('open')}
+function openSet(){keyI.value=S.key;sync();showRate();sysI.value=S.sys||SYS;fillPv();gv.value=S.voice;renderEx();sheet.classList.add('open')}
 $('#gear').onclick=openSet;
 $('#ok').onclick=()=>sheet.classList.remove('open');
 sheet.onclick=e=>{if(e.target===sheet)sheet.classList.remove('open')};
@@ -604,7 +696,7 @@ keyI.oninput=()=>{S.key=keyI.value.trim();save()};
 sheet.querySelectorAll('.seg').forEach(g=>g.onclick=e=>{
   const b=e.target.closest('button');if(!b)return;
   const k=g.dataset.k;S[k]=k==='zoom'?+b.dataset.v:b.dataset.v;save();sync();
-  if(k==='zoom'&&stream)setZoom(S.zoom);if(k==='mode')applyMode();
+  if(k==='zoom'&&stream)setZoom(S.zoom);if(k==='mode')applyMode();if(k==='camMem')updNew();
 });
 
 document.querySelectorAll('.ver').forEach(e=>e.textContent='Versión '+VER);
@@ -628,6 +720,113 @@ $('#tv').onclick=async()=>{
     const a=new Audio(wav(p));a.playbackRate=S.rate;await a.play();o.textContent='';
   }catch(e){o.textContent='Error: '+String(e.message||e).slice(0,120)}
 };
+/* ---- Memoria corta: últimos 3 intercambios, solo texto, se reinicia a los 30 min ---- */
+let MEM=[];
+function memLoad(){try{MEM=JSON.parse(localStorage.getItem('zf_mem')||'[]')}catch(e){MEM=[]}}
+function memSave(){try{localStorage.setItem('zf_mem',JSON.stringify(MEM))}catch(e){}}
+function memFresh(){if(MEM.length&&Date.now()-MEM[MEM.length-1].t>30*60*1000){MEM=[];memSave()}}
+function memContents(){memFresh();return MEM.flatMap(x=>[{role:'user',parts:[{text:x.u}]},{role:'model',parts:[{text:x.a}]}])}
+function memPush(u,a,cam){if(!a)return;MEM.push({u,a,cam,t:Date.now()});MEM=MEM.slice(-3);memSave();updNew()}
+function memClear(){MEM=[];memSave();updNew();renderChat()}
+function updNew(){memFresh();$('#newc').style.display=(MEM.length&&S.camMem!=='off')?'':'none'}
+$('#newc').onclick=memClear;$('#newc2').onclick=memClear;
+setInterval(updNew,60000);
+
+/* ---- Chat de prueba ---- */
+const chat=$('#chat'),msgs=$('#msgs'),ci=$('#ci');
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const disp=r=>r.replace(/\[\[(.+?)\]\]/g,'$1');
+function addB(kind,text){
+  const d=document.createElement('div'),t=document.createElement('div');
+  d.className=kind==='user'?'bu':'ba';t.textContent=text;d.appendChild(t);
+  const o={d,t};
+  if(kind!=='user'){
+    const m=document.createElement('div'),s=document.createElement('button');
+    m.className='bm';s.className='bs';s.textContent='Guardar como ejemplo';s.style.display='none';
+    d.appendChild(m);d.appendChild(s);o.m=m;o.s=s;
+  }
+  msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return o;
+}
+function renderChat(){
+  msgs.innerHTML='';memFresh();
+  MEM.forEach(x=>{
+    addB('user',x.cam?'Foto de un ejercicio (cámara)':x.u);
+    const b=addB('ai',disp(x.a));
+    if(!x.cam){b.s.style.display='';b.s.onclick=()=>openEx(x.u,x.a)}
+  });
+}
+async function chatSend(){
+  const t=ci.value.trim();if(!t)return;
+  if(!S.key){addB('ai','Falta la clave de API. Ponla en Ajustes.');return}
+  ci.value='';rid++;stop();
+  const my=rid;let started=0,full='';
+  addB('user',t);const ab=addB('ai','Pensando…');
+  unlockAudio();
+  try{
+    const cont=memContents().concat([{role:'user',parts:[{text:t}]}]);
+    const mv=await ask(cont,my,d=>{
+      if(my!==rid)return;
+      if(!started){started=1;startPlay()}
+      full+=d;feed(d);ab.t.textContent=disp(full);msgs.scrollTop=msgs.scrollHeight;
+    });
+    if(my!==rid)return;
+    endFeed();memPush(t,full,0);
+    ab.m.textContent='Modelo: '+mv+(useG?' · voz '+S.voice:' · voz del teléfono');
+    ab.s.style.display='';ab.s.onclick=()=>openEx(t,full);
+  }catch(e){if(my===rid)ab.t.textContent='Error: '+String(e.message||e).slice(0,300)}
+}
+$('#openChat').onclick=()=>{back();sheet.classList.remove('open');renderChat();chat.classList.add('open')};
+$('#cb').onclick=()=>{rid++;stop();say('');chat.classList.remove('open');updNew()};
+$('#cn').onclick=()=>{rid++;stop();say('');memClear()};
+$('#cstop').onclick=()=>{rid++;stop();say('')};
+$('#cs').onclick=chatSend;
+
+/* ---- Ejemplos guardados (texto, permanentes en el teléfono) ---- */
+const exed=$('#exed'),exq=$('#exq'),exa=$('#exa');let exIdx=-1;
+function renderEx(){
+  const ex=S.ex||[],l=$('#exl');
+  l.innerHTML=ex.length?ex.map((e,i)=>`<div class="exr"><button data-i="${i}" data-a="t" class="${e.on?'on':''}">${e.on?'Activo':'Apagado'}</button><span>${esc(e.t)}</span><button data-i="${i}" data-a="e">Editar</button><button data-i="${i}" data-a="d">Borrar</button></div>`).join(''):'<small>Aún no hay ejemplos. Guárdalos desde el chat de prueba.</small>';
+  $('#exs').textContent=ex.length?'('+ex.length+' de 5 · '+ex.reduce((n,e)=>n+e.q.length+e.a.length,0)+' caracteres)':'';
+}
+$('#exl').onclick=e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const i=+b.dataset.i,a=b.dataset.a;
+  if(a==='t'){S.ex[i].on=!S.ex[i].on;save();renderEx()}
+  else if(a==='d'){if(confirm('¿Borrar este ejemplo?')){S.ex.splice(i,1);save();renderEx()}}
+  else openEx(S.ex[i].q,S.ex[i].a,i);
+};
+function openEx(q,a,i){exIdx=i==null?-1:i;exq.value=q;exa.value=a;$('#exm').textContent='';exed.classList.add('open')}
+$('#exno').onclick=()=>exed.classList.remove('open');
+$('#exok').onclick=()=>{
+  const q=exq.value.trim(),a=exa.value.trim(),m=$('#exm');
+  if(!q||!a){m.textContent='Escribe el ejercicio y la respuesta.';return}
+  if(q.length>3000||a.length>3000){m.textContent='Máximo 3000 caracteres en cada caja.';return}
+  S.ex=S.ex||[];
+  if(exIdx<0&&S.ex.length>=5){m.textContent='Ya tienes 5 ejemplos. Borra uno primero.';return}
+  const e={t:q.replace(/\s+/g,' ').slice(0,40),q,a,on:exIdx<0?true:S.ex[exIdx].on};
+  if(exIdx<0)S.ex.push(e);else S.ex[exIdx]=e;
+  save();renderEx();exed.classList.remove('open');
+  if(chat.classList.contains('open'))say('Ejemplo guardado');
+};
+
+/* ---- Copia de seguridad (ejemplos, instrucciones y preferencias; nunca la clave) ---- */
+$('#bk').onclick=async()=>{
+  const d=JSON.stringify({v:1,sys:S.sys||'',ex:S.ex||[],think:S.think,rate:S.rate,model:S.model,engine:S.engine,voice:S.voice,mode:S.mode,camMem:S.camMem});
+  $('#bkt').value=d;
+  try{await navigator.clipboard.writeText(d);$('#bkm').textContent='Copiado. Pégalo en tus notas.'}
+  catch(e){$('#bkm').textContent='Selecciona el texto de la caja y cópialo.'}
+};
+$('#rs').onclick=()=>{
+  try{
+    const d=JSON.parse($('#bkt').value);if(!d||typeof d!=='object')throw 0;
+    if(typeof d.sys==='string')S.sys=d.sys;
+    if(Array.isArray(d.ex))S.ex=d.ex.slice(0,5).filter(e=>e&&e.q&&e.a).map(e=>({t:String(e.t||e.q).slice(0,40),q:String(e.q).slice(0,3000),a:String(e.a).slice(0,3000),on:e.on!==false}));
+    ['think','model','engine','voice','mode','camMem'].forEach(k=>{if(typeof d[k]==='string')S[k]=d[k]});
+    if(typeof d.rate==='number')S.rate=d.rate;
+    save();openSet();applyMode();updNew();$('#bkm').textContent='Restaurado.';
+  }catch(e){$('#bkm').textContent='Ese texto no es una copia de seguridad válida.'}
+};
+
 $('#shutter').onclick=openNat;
 $('#back').onclick=()=>{back();if(S.mode==='native')openNat()};
 const rateI=$('#rate'),rv=$('#rv');
@@ -651,6 +850,7 @@ document.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&mode==='live'&&S.mode==='viewer'&&(!stream||stream.getTracks()[0].readyState!=='live'))cam();
 });
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+memLoad();updNew();renderEx();
 applyMode();
 if(!S.key)openSet();
 </script>
