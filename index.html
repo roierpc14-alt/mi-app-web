@@ -131,6 +131,10 @@ select{width:100%;padding:12px;border-radius:12px;border:1px solid #3a3a3c;backg
       <textarea id="sys" spellcheck="false"></textarea>
       <button id="rst">Restaurar las originales</button>
       <small>Si una versión nueva trae instrucciones mejoradas, pulsa Restaurar para tomarlas.</small>
+      <label for="csys">Instrucciones del chat de prueba (se guardan al escribir)</label>
+      <textarea id="csys" spellcheck="false"></textarea>
+      <button id="crst" class="tb">Restaurar las del chat</button>
+      <small>Se suman a las instrucciones de arriba solo cuando usas el chat.</small>
       <label>Memoria en la cámara</label>
       <div class="seg" data-k="camMem"><button data-v="on">Activada</button><button data-v="off">Desactivada</button></div>
       <small>Recuerda los últimos 3 intercambios y se reinicia tras 30 minutos sin usar la app.</small>
@@ -176,7 +180,7 @@ select{width:100%;padding:12px;border-radius:12px;border:1px solid #3a3a3c;backg
 const $=s=>document.querySelector(s);
 const st=$('#stage'),vid=$('#v'),cv=$('#c'),pill=$('#pill'),zb=$('#zb'),sheet=$('#set'),keyI=$('#key'),sil=$('#sil');
 const LVL={low:'LOW',mid:'MEDIUM',high:'HIGH'};
-const VER='v8';
+const VER='v8.1';
 const MODELS=['gemini-flash-latest','gemini-3.6-flash','gemini-3.5-flash-lite'];
 const ORDER={auto:[0,1,2],est:[1,0,2],rap:[2,1,0]};
 const SYS=`Eres un profesor particular de matemáticas avanzadas, cálculo y ecuaciones diferenciales que habla con el estudiante por audio, mientras este camina con audífonos y lleva un cuaderno y un lápiz en la mano para escribir todo a mano, paso a paso, en papel. Recibes una foto de apuntes, ejercicios de ecuaciones diferenciales lineales homogéneas de orden superior, cálculos del Wronskiano, aplicaciones del Teorema de Superposición, soluciones generales o demostraciones del Teorema de Abel.
@@ -298,10 +302,18 @@ async function snap(){
 }
 
 /* ---------- Gemini (respuesta por partes) ---------- */
+let ASK='cam';
+const CHATPRE='Texto del ejercicio pegado (llega como texto, no como foto):\n\n';
+const CHATSYS=`MODO CHAT DE PRUEBA. En este modo no recibes una foto: recibes el texto completo de un ejercicio, pegado por el estudiante. Trátalo exactamente igual que si fuera el contenido de la foto, aplicando todas las reglas anteriores.
+Tu única función es leer con la voz, en el formato indicado, el texto que recibes. Solo hay dos posibilidades.
+Primera: si el texto ya trae el ejercicio resuelto, o es teoría o una demostración, léelo y explícalo tal como indican las reglas para ese caso.
+Segunda: si el texto trae un ejercicio sin resolver, resuélvelo y dicta la solución tal como indican las reglas para ese caso.
+No converses. No saludes. No hagas preguntas. No confirmes que entendiste. No agregues comentarios que las reglas no pidan. Cada mensaje es un ejercicio nuevo, sin relación con los anteriores.`;
 function sysText(){
   let s=(S.sys&&S.sys.trim())?S.sys:SYS;
   const ex=(S.ex||[]).filter(e=>e.on);
   if(ex.length)s+='\n\nEJEMPLOS APROBADOS. Imita exactamente su formato, su estructura, su nivel de detalle y su estilo al responder. Si el ejercicio es el mismo, sigue la misma estructura.\n'+ex.map((e,i)=>'\nEjemplo '+(i+1)+'.\nEjercicio:\n'+e.q+'\nRespuesta aprobada:\n'+e.a).join('\n');
+  if(ASK==='chat')s+='\n\n'+((S.chatSys&&S.chatSys.trim())?S.chatSys:CHATSYS);
   return s;
 }
 async function callStream(m,contents,onText){
@@ -644,7 +656,7 @@ st.addEventListener('pointerup',e=>{
 });
 let rid=0;
 async function analyze(getB64){
-  const my=++rid;let started=0,full='';mode='busy';say('Preparando…',1);
+  const my=++rid;let started=0,full='';ASK='cam';mode='busy';say('Preparando…',1);
   try{
     const b64=await getB64();if(my!==rid)return;
     st.classList.add('res');say('Analizando…',1);
@@ -688,7 +700,7 @@ function back(){rid++;stop();mode='live';st.classList.remove('res');say('');updN
 function sync(){
   sheet.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(S[g.dataset.k])===b.dataset.v)));
 }
-function openSet(){keyI.value=S.key;sync();showRate();sysI.value=S.sys||SYS;fillPv();gv.value=S.voice;renderEx();sheet.classList.add('open')}
+function openSet(){keyI.value=S.key;sync();showRate();sysI.value=S.sys||SYS;csysI.value=S.chatSys||CHATSYS;fillPv();gv.value=S.voice;renderEx();sheet.classList.add('open')}
 $('#gear').onclick=openSet;
 $('#ok').onclick=()=>sheet.classList.remove('open');
 sheet.onclick=e=>{if(e.target===sheet)sheet.classList.remove('open')};
@@ -703,6 +715,9 @@ document.querySelectorAll('.ver').forEach(e=>e.textContent='Versión '+VER);
 const sysI=$('#sys');
 sysI.oninput=()=>{S.sys=sysI.value;save()};
 $('#rst').onclick=()=>{S.sys='';save();sysI.value=SYS};
+const csysI=$('#csys');
+csysI.oninput=()=>{S.chatSys=csysI.value;save()};
+$('#crst').onclick=()=>{S.chatSys='';save();csysI.value=CHATSYS};
 const gv=$('#gv'),pv=$('#pv');
 gv.innerHTML=VOICES.map(v=>`<option>${v}</option>`).join('');
 gv.onchange=()=>{S.voice=gv.value;save()};
@@ -725,7 +740,7 @@ let MEM=[];
 function memLoad(){try{MEM=JSON.parse(localStorage.getItem('zf_mem')||'[]')}catch(e){MEM=[]}}
 function memSave(){try{localStorage.setItem('zf_mem',JSON.stringify(MEM))}catch(e){}}
 function memFresh(){if(MEM.length&&Date.now()-MEM[MEM.length-1].t>30*60*1000){MEM=[];memSave()}}
-function memContents(){memFresh();return MEM.flatMap(x=>[{role:'user',parts:[{text:x.u}]},{role:'model',parts:[{text:x.a}]}])}
+function memContents(){memFresh();return MEM.flatMap(x=>[{role:'user',parts:[{text:x.cam?x.u:CHATPRE+x.u}]},{role:'model',parts:[{text:x.a}]}])}
 function memPush(u,a,cam){if(!a)return;MEM.push({u,a,cam,t:Date.now()});MEM=MEM.slice(-3);memSave();updNew()}
 function memClear(){MEM=[];memSave();updNew();renderChat()}
 function updNew(){memFresh();$('#newc').style.display=(MEM.length&&S.camMem!=='off')?'':'none'}
@@ -763,7 +778,7 @@ async function chatSend(){
   addB('user',t);const ab=addB('ai','Pensando…');
   unlockAudio();
   try{
-    const cont=memContents().concat([{role:'user',parts:[{text:t}]}]);
+    ASK='chat';const cont=memContents().concat([{role:'user',parts:[{text:CHATPRE+t}]}]);
     const mv=await ask(cont,my,d=>{
       if(my!==rid)return;
       if(!started){started=1;startPlay()}
@@ -811,7 +826,7 @@ $('#exok').onclick=()=>{
 
 /* ---- Copia de seguridad (ejemplos, instrucciones y preferencias; nunca la clave) ---- */
 $('#bk').onclick=async()=>{
-  const d=JSON.stringify({v:1,sys:S.sys||'',ex:S.ex||[],think:S.think,rate:S.rate,model:S.model,engine:S.engine,voice:S.voice,mode:S.mode,camMem:S.camMem});
+  const d=JSON.stringify({v:1,sys:S.sys||'',chatSys:S.chatSys||'',ex:S.ex||[],think:S.think,rate:S.rate,model:S.model,engine:S.engine,voice:S.voice,mode:S.mode,camMem:S.camMem});
   $('#bkt').value=d;
   try{await navigator.clipboard.writeText(d);$('#bkm').textContent='Copiado. Pégalo en tus notas.'}
   catch(e){$('#bkm').textContent='Selecciona el texto de la caja y cópialo.'}
@@ -820,6 +835,7 @@ $('#rs').onclick=()=>{
   try{
     const d=JSON.parse($('#bkt').value);if(!d||typeof d!=='object')throw 0;
     if(typeof d.sys==='string')S.sys=d.sys;
+    if(typeof d.chatSys==='string')S.chatSys=d.chatSys;
     if(Array.isArray(d.ex))S.ex=d.ex.slice(0,5).filter(e=>e&&e.q&&e.a).map(e=>({t:String(e.t||e.q).slice(0,40),q:String(e.q).slice(0,3000),a:String(e.a).slice(0,3000),on:e.on!==false}));
     ['think','model','engine','voice','mode','camMem'].forEach(k=>{if(typeof d[k]==='string')S[k]=d[k]});
     if(typeof d.rate==='number')S.rate=d.rate;
