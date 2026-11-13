@@ -64,7 +64,7 @@ select{width:100%;padding:12px;border-radius:12px;border:1px solid #3a3a3c;backg
 .exr span{flex:1;min-width:0;font-size:13px;color:#aeaeb2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .exr button{padding:7px 10px;border:1px solid #3a3a3c;border-radius:8px;background:transparent;color:#aeaeb2;font-size:12px}
 .exr button.on{color:var(--ac)}
-#bkt{height:90px}#exq,#exa{height:150px}
+#bkt{height:90px}#exq,#exa{height:220px}
 #chat{position:absolute;inset:0;display:none;flex-direction:column;background:#000;padding-top:env(safe-area-inset-top,0px)}
 #chat.open{display:flex}
 .ch{display:flex;align-items:center;gap:10px;padding:10px 14px}
@@ -180,7 +180,7 @@ select{width:100%;padding:12px;border-radius:12px;border:1px solid #3a3a3c;backg
 const $=s=>document.querySelector(s);
 const st=$('#stage'),vid=$('#v'),cv=$('#c'),pill=$('#pill'),zb=$('#zb'),sheet=$('#set'),keyI=$('#key'),sil=$('#sil');
 const LVL={low:'LOW',mid:'MEDIUM',high:'HIGH'};
-const VER='v8.1';
+const VER='v8.2';
 const MODELS=['gemini-flash-latest','gemini-3.6-flash','gemini-3.5-flash-lite'];
 const ORDER={auto:[0,1,2],est:[1,0,2],rap:[2,1,0]};
 const SYS=`Eres un profesor particular de matemáticas avanzadas, cálculo y ecuaciones diferenciales que habla con el estudiante por audio, mientras este camina con audífonos y lleva un cuaderno y un lápiz en la mano para escribir todo a mano, paso a paso, en papel. Recibes una foto de apuntes, ejercicios de ecuaciones diferenciales lineales homogéneas de orden superior, cálculos del Wronskiano, aplicaciones del Teorema de Superposición, soluciones generales o demostraciones del Teorema de Abel.
@@ -797,6 +797,8 @@ $('#cstop').onclick=()=>{rid++;stop();say('')};
 $('#cs').onclick=chatSend;
 
 /* ---- Ejemplos guardados (texto, permanentes en el teléfono) ---- */
+const EXMAX=20000;
+function cnt(){$('#exm').textContent='Ejercicio: '+exq.value.length+' · Respuesta: '+exa.value.length+' (máximo '+EXMAX+' cada uno)'}
 const exed=$('#exed'),exq=$('#exq'),exa=$('#exa');let exIdx=-1;
 function renderEx(){
   const ex=S.ex||[],l=$('#exl');
@@ -810,12 +812,13 @@ $('#exl').onclick=e=>{
   else if(a==='d'){if(confirm('¿Borrar este ejemplo?')){S.ex.splice(i,1);save();renderEx()}}
   else openEx(S.ex[i].q,S.ex[i].a,i);
 };
-function openEx(q,a,i){exIdx=i==null?-1:i;exq.value=q;exa.value=a;$('#exm').textContent='';exed.classList.add('open')}
+function openEx(q,a,i){exIdx=i==null?-1:i;exq.value=q;exa.value=a;cnt();exed.classList.add('open')}
+exq.oninput=cnt;exa.oninput=cnt;
 $('#exno').onclick=()=>exed.classList.remove('open');
 $('#exok').onclick=()=>{
   const q=exq.value.trim(),a=exa.value.trim(),m=$('#exm');
   if(!q||!a){m.textContent='Escribe el ejercicio y la respuesta.';return}
-  if(q.length>3000||a.length>3000){m.textContent='Máximo 3000 caracteres en cada caja.';return}
+  if(q.length>EXMAX||a.length>EXMAX){m.textContent='Máximo '+EXMAX+' caracteres en cada caja.';return}
   S.ex=S.ex||[];
   if(exIdx<0&&S.ex.length>=5){m.textContent='Ya tienes 5 ejemplos. Borra uno primero.';return}
   const e={t:q.replace(/\s+/g,' ').slice(0,40),q,a,on:exIdx<0?true:S.ex[exIdx].on};
@@ -836,7 +839,7 @@ $('#rs').onclick=()=>{
     const d=JSON.parse($('#bkt').value);if(!d||typeof d!=='object')throw 0;
     if(typeof d.sys==='string')S.sys=d.sys;
     if(typeof d.chatSys==='string')S.chatSys=d.chatSys;
-    if(Array.isArray(d.ex))S.ex=d.ex.slice(0,5).filter(e=>e&&e.q&&e.a).map(e=>({t:String(e.t||e.q).slice(0,40),q:String(e.q).slice(0,3000),a:String(e.a).slice(0,3000),on:e.on!==false}));
+    if(Array.isArray(d.ex))S.ex=d.ex.slice(0,5).filter(e=>e&&e.q&&e.a).map(e=>({t:String(e.t||e.q).slice(0,40),q:String(e.q).slice(0,EXMAX),a:String(e.a).slice(0,EXMAX),on:e.on!==false}));
     ['think','model','engine','voice','mode','camMem'].forEach(k=>{if(typeof d[k]==='string')S[k]=d[k]});
     if(typeof d.rate==='number')S.rate=d.rate;
     save();openSet();applyMode();updNew();$('#bkm').textContent='Restaurado.';
