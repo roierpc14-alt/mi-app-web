@@ -120,6 +120,9 @@ select{width:100%;padding:12px;border-radius:12px;border:1px solid #3a3a3c;backg
       <label>Velocidad de la voz: <span id="rv"></span></label>
       <input id="rate" type="range" min="0.5" max="1.3" step="0.05">
       <small>Hacia la izquierda es más lenta y pausada.</small>
+      <label>Pausa entre palabras: <span id="wgv"></span></label>
+      <input id="wgap" type="range" min="0.5" max="2" step="0.1">
+      <small>Mínimo medio segundo. Cada palabra se dice por separado y se deja ese silencio real entre una y otra.</small>
       <label>Cámara</label>
       <div class="seg" data-k="mode"><button data-v="native">Cámara del teléfono</button><button data-v="viewer">Visor en la app</button></div>
       <label>Zoom inicial (solo visor)</label>
@@ -130,11 +133,11 @@ select{width:100%;padding:12px;border-radius:12px;border:1px solid #3a3a3c;backg
       <label for="sys">Instrucciones para la IA (se guardan al escribir)</label>
       <textarea id="sys" spellcheck="false"></textarea>
       <button id="rst">Restaurar las originales</button>
-      <small>Si una versión nueva trae instrucciones mejoradas, pulsa Restaurar para tomarlas.</small>
+      <small>Estas son las de la cámara. Se guardan al escribir. Restaurar vuelve a las originales de esta versión.</small>
       <label for="csys">Instrucciones del chat de prueba (se guardan al escribir)</label>
       <textarea id="csys" spellcheck="false"></textarea>
       <button id="crst" class="tb">Restaurar las del chat</button>
-      <small>Se suman a las instrucciones de arriba solo cuando usas el chat.</small>
+      <small>El chat usa SOLO estas instrucciones (no se mezclan con las de la cámara). Restaurar vuelve a las originales de esta versión.</small>
       <label>Memoria en la cámara</label>
       <div class="seg" data-k="camMem"><button data-v="on">Activada</button><button data-v="off">Desactivada</button></div>
       <small>Recuerda los últimos 3 intercambios y se reinicia tras 30 minutos sin usar la app.</small>
@@ -180,56 +183,50 @@ select{width:100%;padding:12px;border-radius:12px;border:1px solid #3a3a3c;backg
 const $=s=>document.querySelector(s);
 const st=$('#stage'),vid=$('#v'),cv=$('#c'),pill=$('#pill'),zb=$('#zb'),sheet=$('#set'),keyI=$('#key'),sil=$('#sil');
 const LVL={low:'LOW',mid:'MEDIUM',high:'HIGH'};
-const VER='v8.2';
+const VER='v8.4';
 const MODELS=['gemini-flash-latest','gemini-3.6-flash','gemini-3.5-flash-lite'];
 const ORDER={auto:[0,1,2],est:[1,0,2],rap:[2,1,0]};
-const SYS=`Eres un profesor particular de matemáticas avanzadas, cálculo y ecuaciones diferenciales que habla con el estudiante por audio, mientras este camina con audífonos y lleva un cuaderno y un lápiz en la mano para escribir todo a mano, paso a paso, en papel. Recibes una foto de apuntes, ejercicios de ecuaciones diferenciales lineales homogéneas de orden superior, cálculos del Wronskiano, aplicaciones del Teorema de Superposición, soluciones generales o demostraciones del Teorema de Abel.
+const ESTILO=`FORMATO DE LA VOZ. Todo lo que respondas se lee en voz alta. Usa solo texto plano en español: sin markdown, sin viñetas, sin asteriscos, sin emojis, sin bloques de código. Cada instrucción va en su propio renglón (salto de línea). Frases cortas. No escribas la palabra pausa.
 
-Reglas estrictas de formato y estilo, porque tu respuesta se leerá completa en voz alta:
+SIN SÍMBOLOS. Nunca escribas símbolos matemáticos: ni el signo más, ni menos, ni igual, ni paréntesis, ni llaves, ni barras, ni apóstrofos de derivada, ni flechas. Escribe siempre su nombre con palabras: más, menos, igual, abre paréntesis, cierra paréntesis, abre llave, cierra llave. Escribe los números con palabras. Nombra cada letra tal como suena: equis, ye, te, ese, efe, ele mayúscula, ce uno, ce dos, ye prima, ye doble prima, ye triple prima, ye de cero, ye prima de cero, e elevado a, integral de cero a te.
 
-Utiliza únicamente texto plano en español: sin ningún tipo de markdown, sin listas con viñetas, sin asteriscos, sin emojis y sin bloques de código.
+CÓMO SE DICTA PARA ESCRIBIR A MANO. Cada renglón es una orden de escritura corta que empieza con un verbo: escribe, pon, dibuja, deja un espacio, sigue con, tacha. El estudiante escribe en el papel exactamente lo que le dices, en el orden en que lo dices.
 
-Ritmo ultra pausado y deliberado: Habla de forma sumamente lenta, rítmica, formal y calmada. Utiliza frases muy cortas separadas por puntos continuos. Obliga a la voz a hacer una pausa clara y perceptible entre cada palabra individual y cada término matemático, para que el estudiante pueda procesarlo y plasmarlo con su lápiz en el papel mientras camina sin prisa.
+Fracciones. En papel una fracción se escribe apilada. Dicta así: escribe el numerador, dibuja debajo una raya de fracción y escribe abajo de la raya el denominador. Nunca digas entre, sobre, barra ni paréntesis para una división. Si el texto o la foto trae una división en notación lineal, por ejemplo (4y'')/4 + (4y)/4, conviértela a fracción apilada antes de dictarla, así:
+Escribe cuatro ye doble prima.
+Dibuja debajo una raya de fracción.
+Escribe abajo de la raya cuatro.
+A la derecha de la fracción, a la altura de la raya, escribe más.
+Escribe cuatro ye.
+Dibuja debajo una raya de fracción.
+Escribe abajo de la raya cuatro.
 
-Escribe todos los números con palabras y nombra cada variable, subíndice u operador tal como suena: equis, ye, zeta, ene, eme, ye sub uno, ye sub dos, derivada de orden dos de ye respecto a equis.
+Ubicación. No digas a la derecha, arriba o abajo en cada paso. Dilo solo cuando haga falta para que el estudiante sepa dónde poner algo, por ejemplo el más o el igual junto a una fracción, un exponente o un subíndice.
 
-Nunca escribas símbolos matemáticos directos (prohibido el signo de suma, el signo igual, paréntesis, llaves, corchetes, barras de división o flechas): escribe siempre su nombre completo con palabras.
+Exponentes y subíndices. Di elevado a la dos, o ye sub uno. Si el exponente es largo, di elevado a, el exponente completo, y luego fin del exponente.
 
-Cero relleno y cero introducciones conversacionales: Prohibido decir frases como vamos a resolver, vamos a analizar, aquí tenemos o similares. Ve directo al grano desde la primera palabra.
+Cada cálculo parcial se dicta aparte y completo antes de pasar al siguiente renglón.`;
 
-Primero, analiza la foto recibida y ubícala en su tema clave: Ecuaciones diferenciales lineales homogéneas de orden superior, Principio o Teorema de Superposición, Cálculo y análisis del Wronskiano, Solución general del caso homogéneo, o Teorema de Abel.
+const SYS=`Eres un dictador de matemáticas. Hablas por audio con un estudiante que camina con audífonos y lleva un cuaderno y un lápiz para escribir todo a mano, en papel, mientras te escucha. Recibes una foto de apuntes o de un ejercicio sobre estos temas: Transformada de Laplace, transformada de la derivada, derivada de la transformada, transformada de la integral y transformada de funciones escalonadas.
 
-CASO A. La foto contiene teoría, una ecuación ya desarrollada o una demostración y no pide resolver nada nuevo. Di el tema en una frase corta y explica de forma directa, técnica y muy pausada los conceptos clave, el comportamiento de las raíces, la independencia lineal o la relación teórica, sin saludos ni rodeos. Cierra con un resumen conceptual definitivo en una sola frase.
+Tu trabajo no es dar clase: es dictar lo que hay que escribir en el papel.
 
-CASO B. La foto presenta un ejercicio que pide resolver algo. Sigue estrictamente esta estructura exacta, sin texto de más:
+${ESTILO}
 
-Di únicamente el nombre del tema.
+QUÉ HACER CON LA FOTO. Primero ubica el tema entre los cinco de arriba.
 
-Repite en una frase muy breve lo que pide el ejercicio.
+CASO A. La foto es solo teoría pura (definiciones o fórmulas) y no trae ningún ejercicio ni desarrollo. Di el tema en una frase corta y dicta cada fórmula o definición para escribirla, con una frase corta de apoyo por fórmula como máximo. Cierra con una sola frase.
 
-Comienza de inmediato con el dictado paso a paso para el papel, utilizando pausas extremas entre palabra y palabra.
+CASO B. La foto trae un ejercicio, esté resuelto o no. Es el caso más común. Estructura exacta, sin texto de más:
+Primero, di únicamente el nombre del tema.
+Segundo, di en una frase muy breve lo que pide el ejercicio.
+Tercero, dicta de inmediato el ejercicio y su solución, renglón por renglón, como órdenes de escritura.
+Si el ejercicio ya viene resuelto en la foto, no lo expliques ni lo narres: dicta exactamente lo que está escrito, en el mismo orden y con los mismos pasos, sin agregar ni quitar nada. Si no viene resuelto, resuélvelo y dicta cada renglón de la solución. Entre un paso y otro no expliques por qué: solo di qué escribir.
+Termina con una frase que diga el resultado final que quedó escrito.
 
-Estructura detallada para el dictado en papel (Caso B):
+Prohibido: saludar, decir vamos a resolver, vamos a analizar, aquí tenemos, recuerda que, esto significa, o cualquier introducción o relleno. Empieza directo con la primera palabra útil.`;
 
-Guía al estudiante indicando la disposición en la hoja mediante frases cortas y pausadas. Ejemplo: Escribe en la parte superior de tu hoja. Abre paréntesis. Escribe el operador diferencial. Cierra paréntesis. Escribe igual a cero. Pausa.
-
-Para derivadas, di: derivada de orden tres de ye respecto a equis. Pausa. Menos el coeficiente. Por la derivada de orden dos de ye respecto a equis. Pausa.
-
-Para el polinomio característico, di: sustituye ye por la exponencial de erre por equis. Pausa. Factoriza el polinomio auxiliar. Pausa. Obtén las raíces. Pausa.
-
-Para matrices o el Wronskiano, di: Dibuja un determinante de orden dos en tu hoja. Pausa. Primera fila horizontal. Escribe ye sub uno. Escribe ye sub dos. Pausa. Segunda fila horizontal. Escribe la derivada de ye sub uno. Escribe la derivada de ye sub dos. Cierra el determinante. Pausa.
-
-Dicta el desarrollo del determinante paso a paso: multiplica la primera función por la derivada de la segunda función. Pausa. Menos. Abre paréntesis. La segunda función por la derivada de la primera función. Cierra paréntesis. Pausa.
-
-Para agrupar o operar, di: abre paréntesis. Pausa. Cierra paréntesis. Pausa. Elevado a la dos. Pausa. Fin del exponente. Pausa. Por. Pausa. Más. Pausa. Menos. Pausa. Igual. Pausa.
-
-Dicta los cálculos parciales de forma aislada y pausada antes de avanzar al siguiente renglón.
-
-Concluye ensamblando la solución general final como combinación lineal de las soluciones fundamentales multiplicadas por constantes arbitrarias, por ejemplo ce uno y ce dos.
-
-Finaliza el ejercicio con una frase clara que resuma el resultado obtenido en el papel.`;
-
-let S={key:'',think:'mid',zoom:1,mode:'native',rate:.9,model:'auto',sys:'',engine:'gemini',voice:'Kore',pvoice:'',ex:[],camMem:'on'};
+let S={key:'',think:'mid',zoom:1,mode:'native',rate:.9,wgap:.5,model:'auto',sys:'',engine:'gemini',voice:'Kore',pvoice:'',ex:[],camMem:'on'};
 try{Object.assign(S,JSON.parse(localStorage.getItem('zf')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('zf',JSON.stringify(S))}catch(e){}};
 const say=(t,busy)=>{pill.textContent=t;pill.classList.toggle('busy',!!busy);pill.classList.toggle('on',!!t);const c=document.getElementById('cstat');if(c)c.textContent=t||''};
@@ -303,19 +300,29 @@ async function snap(){
 
 /* ---------- Gemini (respuesta por partes) ---------- */
 let ASK='cam';
-const CHATPRE='Texto del ejercicio pegado (llega como texto, no como foto):\n\n';
-const CHATSYS=`MODO CHAT DE PRUEBA. En este modo no recibes una foto: recibes el texto completo de un ejercicio, pegado por el estudiante. Trátalo exactamente igual que si fuera el contenido de la foto, aplicando todas las reglas anteriores.
-Tu única función es leer con la voz, en el formato indicado, el texto que recibes. Solo hay dos posibilidades.
-Primera: si el texto ya trae el ejercicio resuelto, o es teoría o una demostración, léelo y explícalo tal como indican las reglas para ese caso.
-Segunda: si el texto trae un ejercicio sin resolver, resuélvelo y dicta la solución tal como indican las reglas para ese caso.
-No converses. No saludes. No hagas preguntas. No confirmes que entendiste. No agregues comentarios que las reglas no pidan. Cada mensaje es un ejercicio nuevo, sin relación con los anteriores.`;
+const CHATPRE='ORDEN: NO EXPLIQUES NADA. Dicta el texto de abajo como instrucciones para escribirlo a mano en el cuaderno, una instrucción por renglón, y nada más. Si trae notación lineal (barras o paréntesis de división), conviértela a fracción apilada.\n\nTEXTO:\n\n';
+const CHATPOST='\n\nFIN DEL TEXTO. Responde únicamente con el dictado: sin introducción, sin explicación, sin comentarios y sin cierre.';
+const chatWrap=t=>CHATPRE+t+CHATPOST;
+const CHATSYS=`MODO DICTADO. No eres un asistente de chat ni un profesor: eres un lector de voz que dicta ejercicios de matemáticas para que el estudiante los copie a mano en su cuaderno. Temas: Transformada de Laplace, transformada de la derivada, derivada de la transformada, transformada de la integral y transformada de funciones escalonadas.
+
+Recibes el texto de un ejercicio, pegado por el estudiante. No recibes ninguna foto. Tu única función es dictar ese texto como instrucciones para escribir a mano.
+
+Solo hay dos casos.
+Caso uno: el texto ya trae el ejercicio resuelto, o una solución, o una demostración. No lo expliques, no lo resumas y no lo narres. Dicta exactamente lo que está escrito, en el mismo orden y con los mismos pasos, convertido en órdenes de escritura.
+Caso dos: el texto trae un ejercicio sin resolver. Resuélvelo por dentro y dicta el enunciado y la solución renglón por renglón, como órdenes de escritura, sin explicar entre pasos.
+
+Tu respuesta debe ser SOLO el dictado. Prohibido: explicar, justificar, dar contexto, nombrar el método, dar ejemplos propios, resumir, saludar, preguntar, confirmar que entendiste, comentar, abrir con una introducción, cerrar con una conclusión, y frases como vamos a, esto significa, recuerda que, es decir, por lo tanto, en resumen. Empieza directo con la primera orden de escritura, por ejemplo: Escribe... Cada mensaje es un ejercicio nuevo, sin relación con los anteriores.
+
+${ESTILO}
+
+Antes de responder revisa: ¿cada renglón es una orden de escritura? ¿Hay alguna frase que explique? Si la hay, bórrala.`;
 function sysText(){
-  let s=(S.sys&&S.sys.trim())?S.sys:SYS;
+  let s=ASK==='chat'?((S.chatSys&&S.chatSys.trim())?S.chatSys:CHATSYS):((S.sys&&S.sys.trim())?S.sys:SYS);
   const ex=(S.ex||[]).filter(e=>e.on);
   if(ex.length)s+='\n\nEJEMPLOS APROBADOS. Imita exactamente su formato, su estructura, su nivel de detalle y su estilo al responder. Si el ejercicio es el mismo, sigue la misma estructura.\n'+ex.map((e,i)=>'\nEjemplo '+(i+1)+'.\nEjercicio:\n'+e.q+'\nRespuesta aprobada:\n'+e.a).join('\n');
-  if(ASK==='chat')s+='\n\n'+((S.chatSys&&S.chatSys.trim())?S.chatSys:CHATSYS);
   return s;
 }
+const ptag=()=>{const c=ASK==='chat'?S.chatSys:S.sys;return ((c&&c.trim())?'personalizadas':'originales 8.3')+' · ejemplos activos: '+(S.ex||[]).filter(e=>e.on).length};
 async function callStream(m,contents,onText){
   const ac=new AbortController(),T=S.think==='high'?70000:40000;
   let to,got=0,mv=m;
@@ -403,17 +410,26 @@ function spell(tok){
   }
   return r;
 }
-/* Una línea → fragmentos para hablar. Lo que viene entre [[ ]] se deletrea carácter por carácter */
-function addLine(line){
+/* Pausa mínima entre palabras (ms). Nunca baja de 500. */
+const wg=()=>Math.max(500,Math.round((+S.wgap||.5)*1000));
+const WORDS=t=>t.split(/\s+/).map(w=>w.replace(/^[^a-záéíóúüñ0-9]+|[^a-záéíóúüñ0-9]+$/gi,'')).filter(w=>/[a-záéíóúüñ0-9]/i.test(w));
+/* Una línea → lista de [palabra, pausa extra al terminar]. Lo que viene entre [[ ]] se deletrea carácter por carácter */
+function lineWords(line){
+  const f=[];
   line.split(/\[\[(.+?)\]\]/).forEach((seg,i,arr)=>{
-    if(i%2){const s=spell(seg);s.forEach((n,j)=>{P.ch.push(n);P.w.push(j===s.length-1?900:450)});return}
-    const t=clean(seg);
-    if(!/[a-záéíóúñ0-9]/i.test(t))return;
-    const parts=(t.match(/[^.!?;:]+[.!?;:]*/g)||[]).flatMap(x=>x.length>180?x.match(/[^,]+,?/g):[x]);
-    let c='';
-    for(const x of parts){if(c&&(c+x).length>170){P.ch.push(c.trim());P.w.push(350);c=''}c+=x+' '}
-    if(c.trim()){P.ch.push(c.trim());P.w.push(i===arr.length-1?900:400)}
+    if(i%2){
+      const s=spell(seg);
+      s.forEach((n,j)=>{const w=WORDS(n);w.forEach((x,k)=>f.push([x,k===w.length-1?(j===s.length-1?900:450):0]))});
+    }else{
+      const w=WORDS(clean(seg));
+      w.forEach((x,k)=>f.push([x,k===w.length-1?(i===arr.length-1?900:400):0]));
+    }
   });
+  return f;
+}
+/* Voz del teléfono: cada palabra es su propio fragmento, con silencio real (temporizador) entre una y otra */
+function addLine(line){
+  lineWords(line).forEach(([w,g])=>{P.ch.push(w);P.w.push(Math.max(g,wg()))});
 }
 const ALL=[];
 let useG=false,feedOpen=0;
@@ -465,7 +481,7 @@ function pz(){
 function rz(){
   if(!P.on||!P.pz)return;
   let j=P.i,r=P.el;
-  while(r<5000&&j>0){j--;r+=P.d[j]||2500}
+  while(r<5000&&j>0){j--;r+=(P.d[j]||800)+((P.w&&P.w[j])||0)}
   from(j);ps('playing');
 }
 function stop(){
@@ -553,26 +569,24 @@ async function tts(text){
   if(text.length<=60)dbSet(key,new Int16Array(p).buffer);
   return p;
 }
-function chunks(t){
-  const s=(t.match(/[^.!?;:]+[.!?;:]*/g)||[]).flatMap(x=>x.length>180?x.match(/[^,]+,?/g):[x]),o=[];let c='';
-  for(const x of s){if(c&&(c+x).length>170){o.push(c.trim());c=''}c+=x+' '}
-  if(c.trim())o.push(c.trim());
-  return o;
-}
+const WMAX=5;
 function gUnits(line){
-  const sg=line.split(/\[\[(.+?)\]\]/);
-  if(sg.length===1){const t=clean(line);return /[a-záéíóúñ0-9]/i.test(t)?chunks(t).map((c,i,a)=>[['t',c,i===a.length-1?900:350]]):[]}
-  const u=[];
-  sg.forEach((s,i,a)=>{
-    if(i%2){const n=spell(s);n.forEach((x,j)=>u.push(['k',x,j===n.length-1?900:450]))}
-    else{const t=clean(s);if(/[a-záéíóúñ0-9]/i.test(t))u.push(['t',t,i===a.length-1?900:400])}
-  });
-  return u.length?[u]:[];
+  const f=lineWords(line),u=[];
+  for(let i=0;i<f.length;i+=WMAX)u.push(f.slice(i,i+WMAX).map(([w,g])=>['t',w,g]));
+  return u;
 }
+/* Cada palabra se sintetiza sola (se guarda en el teléfono y se pide una sola vez) y se le pega un silencio.
+   El silencio se compensa con la velocidad de reproducción para que dure de verdad lo configurado. */
 async function gBuild(u){
+  const k=G.tok,need=[...new Set(u.map(x=>x[1]))],got={};
+  let q=0;
+  await Promise.all(Array.from({length:Math.min(4,need.length)},async()=>{
+    while(q<need.length&&k===G.tok){const w=need[q++];got[w]=await tts(w)}
+  }));
+  if(k!==G.tok)return null;
   const parts=[];let n=0;
   for(const [kd,x,g] of u){
-    const p=await tts(x),z=new Int16Array(Math.round(RATE*g/1000));
+    const p=got[x],z=new Int16Array(Math.round(RATE*Math.max(g,wg())*(S.rate||1)/1000));
     parts.push(p,z);n+=p.length+z.length;
   }
   const all=new Int16Array(n);let o=0;
@@ -595,7 +609,7 @@ async function gPump(){
       const line=G.todo.shift();
       for(const u of gUnits(line)){
         const it=await gBuild(u);
-        if(k!==G.tok)return;
+        if(!it||k!==G.tok)return;
         G.q.push(it);
         if(G.wait||G.q.length===1){G.wait=0;gPlay(G.q.length-1);if(G.q.length===1)say('Reproduciendo…')}
       }
@@ -661,7 +675,7 @@ async function analyze(getB64){
     const b64=await getB64();if(my!==rid)return;
     st.classList.add('res');say('Analizando…',1);
     const mem=S.camMem!=='off';
-    const cont=(mem?memContents():[]).concat([{role:'user',parts:[{inline_data:{mime_type:'image/jpeg',data:b64}},{text:'Explícame esto por audio.'}]}]);
+    const cont=(mem?memContents():[]).concat([{role:'user',parts:[{inline_data:{mime_type:'image/jpeg',data:b64}},{text:'Sigue tus instrucciones con esta foto. Si trae un ejercicio, esté resuelto o no, dicta el ejercicio y su solución como órdenes para escribir a mano. No lo expliques.'}]}]);
     const mv=await ask(cont,my,d=>{
       if(my!==rid)return;
       if(!started){started=1;startPlay();mode='result';say(useG?'Preparando la voz…':'Reproduciendo…')}
@@ -700,7 +714,7 @@ function back(){rid++;stop();mode='live';st.classList.remove('res');say('');updN
 function sync(){
   sheet.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(S[g.dataset.k])===b.dataset.v)));
 }
-function openSet(){keyI.value=S.key;sync();showRate();sysI.value=S.sys||SYS;csysI.value=S.chatSys||CHATSYS;fillPv();gv.value=S.voice;renderEx();sheet.classList.add('open')}
+function openSet(){keyI.value=S.key;sync();showRate();showWg();sysI.value=S.sys||SYS;csysI.value=S.chatSys||CHATSYS;fillPv();gv.value=S.voice;renderEx();sheet.classList.add('open')}
 $('#gear').onclick=openSet;
 $('#ok').onclick=()=>sheet.classList.remove('open');
 sheet.onclick=e=>{if(e.target===sheet)sheet.classList.remove('open')};
@@ -740,7 +754,7 @@ let MEM=[];
 function memLoad(){try{MEM=JSON.parse(localStorage.getItem('zf_mem')||'[]')}catch(e){MEM=[]}}
 function memSave(){try{localStorage.setItem('zf_mem',JSON.stringify(MEM))}catch(e){}}
 function memFresh(){if(MEM.length&&Date.now()-MEM[MEM.length-1].t>30*60*1000){MEM=[];memSave()}}
-function memContents(){memFresh();return MEM.flatMap(x=>[{role:'user',parts:[{text:x.cam?x.u:CHATPRE+x.u}]},{role:'model',parts:[{text:x.a}]}])}
+function memContents(){memFresh();return MEM.flatMap(x=>[{role:'user',parts:[{text:x.cam?x.u:chatWrap(x.u)}]},{role:'model',parts:[{text:x.a}]}])}
 function memPush(u,a,cam){if(!a)return;MEM.push({u,a,cam,t:Date.now()});MEM=MEM.slice(-3);memSave();updNew()}
 function memClear(){MEM=[];memSave();updNew();renderChat()}
 function updNew(){memFresh();$('#newc').style.display=(MEM.length&&S.camMem!=='off')?'':'none'}
@@ -778,7 +792,7 @@ async function chatSend(){
   addB('user',t);const ab=addB('ai','Pensando…');
   unlockAudio();
   try{
-    ASK='chat';const cont=memContents().concat([{role:'user',parts:[{text:CHATPRE+t}]}]);
+    ASK='chat';const cont=memContents().concat([{role:'user',parts:[{text:chatWrap(t)}]}]);
     const mv=await ask(cont,my,d=>{
       if(my!==rid)return;
       if(!started){started=1;startPlay()}
@@ -786,7 +800,7 @@ async function chatSend(){
     });
     if(my!==rid)return;
     endFeed();memPush(t,full,0);
-    ab.m.textContent='Modelo: '+mv+(useG?' · voz '+S.voice:' · voz del teléfono');
+    ab.m.textContent='Modelo: '+mv+' · instrucciones '+ptag()+(useG?' · voz '+S.voice:' · voz del teléfono');
     ab.s.style.display='';ab.s.onclick=()=>openEx(t,full);
   }catch(e){if(my===rid)ab.t.textContent='Error: '+String(e.message||e).slice(0,300)}
 }
@@ -829,7 +843,7 @@ $('#exok').onclick=()=>{
 
 /* ---- Copia de seguridad (ejemplos, instrucciones y preferencias; nunca la clave) ---- */
 $('#bk').onclick=async()=>{
-  const d=JSON.stringify({v:1,sys:S.sys||'',chatSys:S.chatSys||'',ex:S.ex||[],think:S.think,rate:S.rate,model:S.model,engine:S.engine,voice:S.voice,mode:S.mode,camMem:S.camMem});
+  const d=JSON.stringify({v:1,sys:S.sys||'',chatSys:S.chatSys||'',sysPrev:S.sysPrev||'',chatSysPrev:S.chatSysPrev||'',ex:S.ex||[],think:S.think,rate:S.rate,wgap:S.wgap,model:S.model,engine:S.engine,voice:S.voice,mode:S.mode,camMem:S.camMem});
   $('#bkt').value=d;
   try{await navigator.clipboard.writeText(d);$('#bkm').textContent='Copiado. Pégalo en tus notas.'}
   catch(e){$('#bkm').textContent='Selecciona el texto de la caja y cópialo.'}
@@ -839,9 +853,12 @@ $('#rs').onclick=()=>{
     const d=JSON.parse($('#bkt').value);if(!d||typeof d!=='object')throw 0;
     if(typeof d.sys==='string')S.sys=d.sys;
     if(typeof d.chatSys==='string')S.chatSys=d.chatSys;
+    if(typeof d.sysPrev==='string')S.sysPrev=d.sysPrev;
+    if(typeof d.chatSysPrev==='string')S.chatSysPrev=d.chatSysPrev;
     if(Array.isArray(d.ex))S.ex=d.ex.slice(0,5).filter(e=>e&&e.q&&e.a).map(e=>({t:String(e.t||e.q).slice(0,40),q:String(e.q).slice(0,EXMAX),a:String(e.a).slice(0,EXMAX),on:e.on!==false}));
     ['think','model','engine','voice','mode','camMem'].forEach(k=>{if(typeof d[k]==='string')S[k]=d[k]});
     if(typeof d.rate==='number')S.rate=d.rate;
+    if(typeof d.wgap==='number')S.wgap=Math.max(.5,d.wgap);
     save();openSet();applyMode();updNew();$('#bkm').textContent='Restaurado.';
   }catch(e){$('#bkm').textContent='Ese texto no es una copia de seguridad válida.'}
 };
@@ -850,6 +867,9 @@ $('#shutter').onclick=openNat;
 $('#back').onclick=()=>{back();if(S.mode==='native')openNat()};
 const rateI=$('#rate'),rv=$('#rv');
 function showRate(){S.rate=+S.rate||.9;rateI.value=S.rate;rv.textContent=S.rate.toFixed(2)+'x'}
+const wgI=$('#wgap'),wgv=$('#wgv');
+function showWg(){S.wgap=Math.max(.5,+S.wgap||.5);wgI.value=S.wgap;wgv.textContent=S.wgap.toFixed(1)+' s'}
+wgI.oninput=()=>{S.wgap=Math.max(.5,+wgI.value);save();wgv.textContent=S.wgap.toFixed(1)+' s'};
 rateI.oninput=()=>{S.rate=+rateI.value;save();gp.playbackRate=S.rate;rv.textContent=S.rate.toFixed(2)+'x'};
 rateI.onchange=()=>{
   if(P.on)return;
@@ -869,7 +889,13 @@ document.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&mode==='live'&&S.mode==='viewer'&&(!stream||stream.getTracks()[0].readyState!=='live'))cam();
 });
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-memLoad();updNew();renderEx();
+memLoad();
+if(S.pv!=='8.3'){
+  if(S.sys&&S.sys.trim())S.sysPrev=S.sys;
+  if(S.chatSys&&S.chatSys.trim())S.chatSysPrev=S.chatSys;
+  S.sys='';S.chatSys='';S.pv='8.3';MEM=[];memSave();save();
+}
+updNew();renderEx();
 applyMode();
 if(!S.key)openSet();
 </script>
